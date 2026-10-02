@@ -1,4 +1,5 @@
 import { useCalculator } from '../hooks/useCalculator';
+import { useInstallPrompt } from '../hooks/useInstallPrompt';
 import { InputSection } from './InputSection';
 import { OutputSection } from './OutputSection';
 import { Button } from './common/Button';
@@ -22,6 +23,7 @@ export type BatteryCalculatorProps = {
  */
 export function BatteryCalculator({ storage }: BatteryCalculatorProps) {
   const calculator = useCalculator(storage);
+  const installPrompt = useInstallPrompt();
 
   return (
     <div class="mx-auto flex w-full max-w-md flex-col gap-4 px-4 pt-6 pb-8">
@@ -64,9 +66,14 @@ export function BatteryCalculator({ storage }: BatteryCalculatorProps) {
       </main>
 
       <footer class="flex items-center justify-between gap-3">
-        <Button variant="outline" onClick={calculator.reset}>
-          Reset
-        </Button>
+        <div class="flex items-center gap-2">
+          <Button variant="outline" onClick={calculator.reset}>
+            Reset
+          </Button>
+          {installPrompt.canInstall && (
+            <Button onClick={() => void installPrompt.install()}>Install app</Button>
+          )}
+        </div>
         <p class="text-xs text-slate-500">Works fully offline</p>
       </footer>
     </div>

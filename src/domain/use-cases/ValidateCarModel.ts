@@ -1,10 +1,5 @@
 import type { CarModelDraft } from '../entities/CarModel';
-import {
-  MAX_CAPACITY,
-  MIN_CAPACITY,
-  VALIDATION_MESSAGES,
-  type FieldError,
-} from '../entities/validation';
+import { MAX_CAPACITY, MIN_CAPACITY, VALIDATION_MESSAGES, type FieldError } from '../entities/validation';
 
 /**
  * Domain rules for a car registration or edit (PRD 2.4.1, 8.1).

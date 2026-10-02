@@ -1,11 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/preact';
 import { BatteryCalculator } from '../BatteryCalculator';
-import { MemoryStorageAdapter } from '../../../infrastructure/storage/LocalStorageAdapter';
+import {
+  LocalStorageAdapter,
+  MemoryStorageAdapter,
+} from '../../../infrastructure/storage/LocalStorageAdapter';
 
-/** Renders with an isolated in-memory store so runs are hermetic. */
+/**
+ * Renders against a real (writable) store, matching production. The setup file
+ * clears `localStorage` after every test so runs stay independent.
+ */
 const renderCalculator = () =>
-  render(<BatteryCalculator storage={new MemoryStorageAdapter()} />);
+  render(<BatteryCalculator storage={new LocalStorageAdapter(window.localStorage)} />);
 
 describe('BatteryCalculator', () => {
   it('should render input section', () => {
@@ -30,6 +36,7 @@ describe('BatteryCalculator', () => {
     fireEvent.change(screen.getByLabelText(/^capacity$/i), { target: { value: '82' } });
     fireEvent.click(screen.getByRole('button', { name: /^add car$/i }));
 
+    // Registering selects the car, so the pack capacity is now 82 kWh.
     fireEvent.change(screen.getByRole('slider', { name: /current battery/i }), { target: { value: '45' } });
     fireEvent.change(screen.getByRole('slider', { name: /target battery/i }), { target: { value: '90' } });
     fireEvent.change(screen.getByRole('slider', { name: /minimum battery/i }), { target: { value: '10' } });
@@ -89,6 +96,21 @@ describe('BatteryCalculator', () => {
   it('announces the results region politely', () => {
     const { container } = renderCalculator();
     expect(container.querySelector('dl[aria-live="polite"]')).toBeInTheDocument();
+  });
+
+  it('warns when persistence is unavailable (PRD 8.2)', () => {
+    // MemoryStorageAdapter reports itself as non-durable, so the degradation
+    // warning must appear and calculations must still work.
+    render(<BatteryCalculator storage={new MemoryStorageAdapter()} />);
+
+    expect(screen.getByRole('status')).toHaveTextContent(/storage is unavailable/i);
+    fireEvent.change(screen.getByRole('slider', { name: /current battery/i }), { target: { value: '60' } });
+    expect(screen.getByText(/current battery: 45 kwh/i)).toBeInTheDocument();
+  });
+
+  it('does not warn when storage is writable', () => {
+    renderCalculator();
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
   });
 
   it('supports keyboard interaction with the sliders', () => {

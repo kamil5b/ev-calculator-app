@@ -1,6 +1,12 @@
 ---
 import '../styles/globals.css';
-import { APPLE_TOUCH_ICON, BASE_PATH, FAVICON, PWA_MANIFEST, THEME_COLOR } from '../infrastructure/config/site';
+import {
+  APPLE_TOUCH_ICON,
+  BASE_PATH,
+  FAVICON,
+  PWA_MANIFEST,
+  THEME_COLOR,
+} from '../infrastructure/config/site';
 
 type Props = {
   title?: string;
@@ -61,11 +67,9 @@ const {
             : `${import.meta.env.BASE_URL}/`;
 
           window.addEventListener('load', () => {
-            navigator.serviceWorker
-              .register(`${base}sw.js`, { scope: base })
-              .catch(() => {
-                // Offline support is an enhancement; never surface it as an error.
-              });
+            navigator.serviceWorker.register(`${base}sw.js`, { scope: base }).catch(() => {
+              // Offline support is an enhancement; never surface it as an error.
+            });
           });
         };
 

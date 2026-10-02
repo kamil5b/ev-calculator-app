@@ -114,7 +114,8 @@ function toCarModel(value: unknown): CarModel | null {
     model,
     name: typeof record.name === 'string' ? record.name : '',
     capacity,
-    createdAt: typeof record.createdAt === 'number' && Number.isFinite(record.createdAt) ? record.createdAt : 0,
+    createdAt:
+      typeof record.createdAt === 'number' && Number.isFinite(record.createdAt) ? record.createdAt : 0,
   };
 }
 

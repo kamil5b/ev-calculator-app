@@ -9,11 +9,7 @@ import { clampPercent, round1, sanitiseCapacity } from './math';
  * A negative result is intentional and means the user is discharging to reach
  * their target (PRD 8.2).
  */
-export function calculateNeededKWh({
-  currentBattery,
-  targetBattery,
-  totalCapacity,
-}: NeededKWhInput): number {
+export function calculateNeededKWh({ currentBattery, targetBattery, totalCapacity }: NeededKWhInput): number {
   const delta = clampPercent(targetBattery) - clampPercent(currentBattery);
   return round1((delta / 100) * sanitiseCapacity(totalCapacity));
 }

@@ -52,10 +52,16 @@ export class PersistenceService {
 }
 
 /**
- * Coerces an untrusted record into a valid {@link BatteryState}.
+ * Coerces an untrusted record into a {@link BatteryState}.
  *
- * Exported because the presentation layer needs the same guarantee when
- * applying a car selection before the state has been re-persisted.
+ * Used **only** when hydrating from storage: the payload may have been written
+ * by an older build or corrupted, so each field falls back to its default when it
+ * cannot be trusted. Range limits are enforced here as a corruption guard; the
+ * live UI state is deliberately *not* normalised, because `validateBatteryInputs`
+ * needs to see what the user actually typed in order to report an inline error.
+ *
+ * The only value that survives as `null` is `efficiency`, which is a legitimate
+ * "not provided" rather than a missing field.
  */
 export function normaliseBatteryState(raw: Partial<Record<keyof BatteryState, unknown>>): BatteryState {
   return {
@@ -64,7 +70,11 @@ export function normaliseBatteryState(raw: Partial<Record<keyof BatteryState, un
     currentBattery: coercePercent(raw.currentBattery) ?? DEFAULT_BATTERY_STATE.currentBattery,
     targetBattery: coercePercent(raw.targetBattery) ?? DEFAULT_BATTERY_STATE.targetBattery,
     minBattery: coercePercent(raw.minBattery) ?? DEFAULT_BATTERY_STATE.minBattery,
-    efficiency: coerceEfficiency(raw.efficiency) ?? DEFAULT_BATTERY_STATE.efficiency,
+    // An absent key means "this build never wrote it" → use the default. A key
+    // that is present but null was written deliberately: the user cleared the
+    // optional efficiency field, so it must stay null.
+    efficiency:
+      raw.efficiency === undefined ? DEFAULT_BATTERY_STATE.efficiency : coerceEfficiency(raw.efficiency),
   };
 }
 
@@ -77,7 +87,12 @@ export function safeParse(raw: string): unknown {
   }
 }
 
-/** Returns a whole 0–100 percentage, or `null` when unusable. */
+/**
+ * Returns a whole percentage, or `null` when the value is unusable.
+ *
+ * Range limits are enforced because this is the trust boundary for stored data;
+ * a percentage outside 0–100 could only have come from a corrupt payload.
+ */
 export function coercePercent(value: unknown): number | null {
   const numeric = toNumber(value);
   if (numeric === null) return null;
@@ -85,7 +100,12 @@ export function coercePercent(value: unknown): number | null {
   return Math.round(numeric);
 }
 
-/** Returns a 10–200 kWh capacity, or `null` when unusable. */
+/**
+ * Returns a 10–200 kWh capacity, or `null` when unusable.
+ *
+ * Same corruption guard as {@link coercePercent}; the live field is validated by
+ * `validateBatteryInputs` so the user still gets an inline range error while typing.
+ */
 export function coerceCapacity(value: unknown): number | null {
   const numeric = toNumber(value);
   if (numeric === null) return null;
@@ -96,9 +116,9 @@ export function coerceCapacity(value: unknown): number | null {
 /**
  * Returns a 5–30 kWh/100km consumption, or `null`.
  *
- * `null` is overloaded: it is both "field left empty" (legitimate, PRD 2.1) and
- * "value out of range" (invalid). The distinction is resolved by the field
- * validator, which reports the range error before state normalisation runs.
+ * `null` carries both "field left empty" (legitimate, PRD 2.1) and "value out of
+ * range" (invalid). {@link normaliseBatteryState} separates them by checking for
+ * an absent key first, so a deliberately cleared field is never resurrected.
  */
 export function coerceEfficiency(value: unknown): number | null {
   if (value === null || value === undefined || value === '') return null;

@@ -52,7 +52,13 @@ describe('PersistenceService', () => {
     it('replaces individual invalid fields with their defaults', () => {
       storage.setItem(
         KEY,
-        JSON.stringify({ currentBattery: 500, totalCapacity: 82, targetBattery: 90, minBattery: 10, efficiency: 17 }),
+        JSON.stringify({
+          currentBattery: 500,
+          totalCapacity: 82,
+          targetBattery: 90,
+          minBattery: 10,
+          efficiency: 17,
+        }),
       );
       const loaded = service.load();
       expect(loaded.currentBattery).toBe(DEFAULT_BATTERY_STATE.currentBattery);
@@ -62,7 +68,13 @@ describe('PersistenceService', () => {
     it('accepts numeric strings, which older builds wrote', () => {
       storage.setItem(
         KEY,
-        JSON.stringify({ totalCapacity: '77', currentBattery: '33', targetBattery: '80', minBattery: '5', efficiency: '15' }),
+        JSON.stringify({
+          totalCapacity: '77',
+          currentBattery: '33',
+          targetBattery: '80',
+          minBattery: '5',
+          efficiency: '15',
+        }),
       );
       const loaded = service.load();
       expect(loaded.totalCapacity).toBe(77);
@@ -117,7 +129,9 @@ describe('normaliseBatteryState', () => {
   });
 
   it('falls back to the default capacity for an out-of-range value', () => {
-    expect(normaliseBatteryState({ totalCapacity: 5 }).totalCapacity).toBe(DEFAULT_BATTERY_STATE.totalCapacity);
+    expect(normaliseBatteryState({ totalCapacity: 5 }).totalCapacity).toBe(
+      DEFAULT_BATTERY_STATE.totalCapacity,
+    );
   });
 });
 

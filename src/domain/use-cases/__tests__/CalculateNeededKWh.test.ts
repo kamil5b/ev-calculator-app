@@ -28,7 +28,17 @@ describe('CalculateNeededKWh', () => {
     expect(calculateNeededKWh({ currentBattery: 50, targetBattery: -10, totalCapacity: 100 })).toBe(-50);
   });
 
-  it('is zero for non-numeric input instead of NaN', () => {
-    expect(calculateNeededKWh({ currentBattery: Number.NaN, targetBattery: 100, totalCapacity: 82 })).toBe(0);
+  it('coerces a non-finite current level to 0% instead of returning NaN', () => {
+    // `clampPercent` maps non-finite input to 0, so an unusable reading is read
+    // as an empty pack and the full target gap is reported.
+    expect(calculateNeededKWh({ currentBattery: Number.NaN, targetBattery: 100, totalCapacity: 82 })).toBe(
+      82,
+    );
+  });
+
+  it('is zero when the target is non-finite', () => {
+    expect(calculateNeededKWh({ currentBattery: 50, targetBattery: Number.NaN, totalCapacity: 82 })).toBe(
+      -41,
+    );
   });
 });

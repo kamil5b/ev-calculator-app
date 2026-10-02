@@ -1,9 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import {
-  LocalStorageAdapter,
-  MemoryStorageAdapter,
-  createDefaultStorage,
-} from '../LocalStorageAdapter';
+import { LocalStorageAdapter, MemoryStorageAdapter, createDefaultStorage } from '../LocalStorageAdapter';
 
 describe('LocalStorageAdapter', () => {
   it('reads and writes through the provided store', () => {

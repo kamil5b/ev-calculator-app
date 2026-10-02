@@ -4,7 +4,9 @@ import type { JSX } from 'preact';
 export type ButtonVariant = 'default' | 'secondary' | 'outline' | 'ghost' | 'destructive';
 export type ButtonSize = 'sm' | 'md' | 'lg';
 
-export type ButtonProps = JSX.HTMLAttributes<HTMLButtonElement> & {
+// `JSX.HTMLAttributes` is only the shared base (no `type`, `disabled`, …), so take
+// the real native button attributes and drop `size` for our variant sizing.
+export type ButtonProps = Omit<JSX.IntrinsicElements['button'], 'size'> & {
   variant?: ButtonVariant;
   size?: ButtonSize;
   /** Renders the single-child spinner treatment and blocks interaction. */

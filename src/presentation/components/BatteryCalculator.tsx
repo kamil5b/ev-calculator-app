@@ -31,8 +31,7 @@ export function BatteryCalculator({ storage }: BatteryCalculatorProps) {
           {calculator.state.currentBattery <= 20 && <Badge variant="destructive">Low battery</Badge>}
         </div>
         <p class="text-sm text-slate-600">
-          Remaining range, charge needed and pack energy — calculated on your device, no account
-          required.
+          Remaining range, charge needed and pack energy — calculated on your device, no account required.
         </p>
       </header>
 

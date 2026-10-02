@@ -1,7 +1,12 @@
 import { cn } from '../../../lib/utils';
 import type { ComponentChildren, JSX } from 'preact';
 
-export type InputProps = Omit<JSX.HTMLAttributes<HTMLInputElement>, 'size'> & {
+export type InputProps = Omit<
+  JSX.IntrinsicElements['input'],
+  // `size` collides with our variant sizing; native handlers would silently not
+  // be forwarded, so callers use `onValueChange` instead.
+  'size' | 'onInput' | 'onChange'
+> & {
   /** Visible label text. Renders nothing when omitted (aria-label is then required). */
   label?: string;
   /** Inline validation message; also wires `aria-invalid` and `aria-describedby`. */
@@ -45,15 +50,13 @@ export function Input({
   ariaLabel,
   id,
   onValueChange,
-  onInput,
   ...props
 }: InputProps) {
   const fieldId = id ?? nextId();
   const describedBy = error ? `${fieldId}-error` : hint ? `${fieldId}-hint` : undefined;
 
-  const handleChange = (event: JSX.TargetedEvent<HTMLInputElement, Event>) => {
-    onValueChange?.((event.currentTarget as HTMLInputElement).value);
-    onInput?.(event);
+  const handleChange = (event: JSX.TargetedInputEvent<HTMLInputElement>) => {
+    onValueChange?.(event.currentTarget.value);
   };
 
   return (

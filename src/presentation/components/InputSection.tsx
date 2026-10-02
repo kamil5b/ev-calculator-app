@@ -91,14 +91,14 @@ export function InputSection({
             max={30}
             step={0.1}
             unit="kWh/100km"
-            value={state.efficiency === null ? '' : String(state.efficiency)}
+            value={
+              state.efficiency === null || !Number.isFinite(state.efficiency) ? '' : String(state.efficiency)
+            }
             placeholder="17"
             error={errorFor('efficiency')}
             hint="Leave empty to skip the range calculation"
             presets={EFFICIENCY_PRESETS}
-            onValueChange={(value) =>
-              onEfficiencyChange(value.trim() === '' ? null : Number(value))
-            }
+            onValueChange={(value) => onEfficiencyChange(value.trim() === '' ? null : Number(value))}
           />
         </CardContent>
       </Card>

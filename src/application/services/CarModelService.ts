@@ -5,8 +5,7 @@ import type { FieldError } from '../../domain/entities/validation';
 
 /** Outcome of a car registration or edit attempt. */
 export type CarMutationResult =
-  | { readonly ok: true; readonly car: CarModel }
-  | { readonly ok: false; readonly errors: FieldError[] };
+  { readonly ok: true; readonly car: CarModel } | { readonly ok: false; readonly errors: FieldError[] };
 
 /**
  * Application service for the user's own car garage (PRD 2.4).

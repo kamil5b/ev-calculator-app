@@ -24,7 +24,8 @@ export function validateBatteryInputs(inputs: BatteryState): FieldError[] {
   const errors: FieldError[] = [];
 
   if (!Number.isFinite(inputs.totalCapacity)) {
-    errors.push({ field: 'totalCapacity', message: VALIDATION_MESSAGES.notANumber });
+    // An empty field parses to NaN, which is what the user means by "required".
+    errors.push({ field: 'totalCapacity', message: VALIDATION_MESSAGES.capacityRequired });
   } else if (inputs.totalCapacity < MIN_CAPACITY || inputs.totalCapacity > MAX_CAPACITY) {
     errors.push({ field: 'totalCapacity', message: VALIDATION_MESSAGES.capacityRange });
   }

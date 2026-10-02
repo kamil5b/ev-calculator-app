@@ -121,9 +121,7 @@ export function ModelSelector({
     <Card>
       <CardHeader>
         <CardTitle>Vehicle</CardTitle>
-        <CardDescription>
-          Pick a car you registered, or enter the capacity manually.
-        </CardDescription>
+        <CardDescription>Pick a car you registered, or enter the capacity manually.</CardDescription>
       </CardHeader>
 
       <CardContent>
@@ -148,7 +146,7 @@ export function ModelSelector({
           max={200}
           step={0.1}
           unit="kWh"
-          value={String(capacity)}
+          value={Number.isFinite(capacity) ? String(capacity) : ''}
           presets={CAPACITY_PRESETS}
           onValueChange={(value) => onCapacityChange(value.trim() === '' ? Number.NaN : Number(value))}
           hint="Usable capacity, between 10 and 200 kWh"
@@ -180,7 +178,16 @@ export function ModelSelector({
         </div>
 
         {mode.kind !== 'closed' && (
-          <form class="space-y-3 rounded-lg border border-slate-200 bg-slate-50 p-3" onSubmit={submit}>
+          <form
+            class="space-y-3 rounded-lg border border-slate-200 bg-slate-50 p-3"
+            onSubmit={submit}
+            // `novalidate` hands validation entirely to `validateCarModel`, which
+            // renders the inline messages PRD 8.1 specifies. Without it the
+            // browser's own bubbles would preempt them for empty or out-of-range
+            // fields. `required`/`min`/`max` stay put: they still carry the
+            // semantics assistive technology reads out.
+            novalidate
+          >
             <p class="text-sm font-medium text-slate-700">
               {mode.kind === 'edit' ? 'Edit car' : 'Register a new car'}
             </p>

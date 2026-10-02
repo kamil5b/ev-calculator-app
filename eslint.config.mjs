@@ -41,10 +41,7 @@ export default tseslint.config(
 
       // Unused arguments are often required by a component signature; prefix
       // them with `_` to opt out (handled by the default TS rule below).
-      '@typescript-eslint/no-unused-vars': [
-        'error',
-        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
-      ],
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
 
       // `void` the promise instead of disabling the rule outright.
       '@typescript-eslint/no-floating-promises': 'off',

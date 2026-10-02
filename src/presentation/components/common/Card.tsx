@@ -8,10 +8,7 @@ export type CardProps = JSX.HTMLAttributes<HTMLDivElement> & {
 /** Bordered surface used to group inputs and outputs. */
 export function Card({ class: className, children, ...props }: CardProps) {
   return (
-    <div
-      class={cn('rounded-xl border border-slate-200 bg-white shadow-sm', className)}
-      {...props}
-    >
+    <div class={cn('rounded-xl border border-slate-200 bg-white shadow-sm', className)} {...props}>
       {children}
     </div>
   );
@@ -28,17 +25,18 @@ export function CardHeader({ class: className, children, ...props }: CardProps) 
 
 export function CardTitle({ class: className, children, ...props }: CardProps) {
   return (
-    <h2
-      class={cn('text-sm font-semibold tracking-wide text-slate-500 uppercase', className)}
-      {...props}
-    >
+    <h2 class={cn('text-sm font-semibold tracking-wide text-slate-500 uppercase', className)} {...props}>
       {children}
     </h2>
   );
 }
 
 export function CardDescription({ class: className, children, ...props }: CardProps) {
-  return <p class={cn('text-sm text-slate-500', className)} {...props}>{children}</p>;
+  return (
+    <p class={cn('text-sm text-slate-500', className)} {...props}>
+      {children}
+    </p>
+  );
 }
 
 /** Body region; `space-y` handles the vertical rhythm of stacked fields. */

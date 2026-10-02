@@ -82,9 +82,7 @@ function Row({ label, value, emphasis = false, tone = 'default' }: RowProps) {
   return (
     <div class="flex items-baseline justify-between gap-3 py-2.5">
       <dt class="text-sm text-slate-600">{label}</dt>
-      <dd
-        class={`${emphasis ? 'text-xl font-semibold' : 'text-base font-medium'} ${toneClass} tabular-nums`}
-      >
+      <dd class={`${emphasis ? 'text-xl font-semibold' : 'text-base font-medium'} ${toneClass} tabular-nums`}>
         {value}
       </dd>
     </div>

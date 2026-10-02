@@ -5,7 +5,6 @@ import { DEFAULT_BATTERY_STATE, type BatteryState } from '../../domain/entities/
 import type { CarModel } from '../../domain/entities/CarModel';
 import type { CalculationResult } from '../../application/dto/CalculationResult';
 import { batteryCalculationService } from '../../application/services/BatteryCalculationService';
-import { normaliseBatteryState } from '../../application/services/PersistenceService';
 import { validateBatteryInputs } from '../../domain/use-cases/ValidateBatteryInputs';
 import type { FieldError } from '../../domain/entities/validation';
 import { clampPercent } from '../../domain/use-cases/math';
@@ -26,10 +25,7 @@ export interface UseCalculator {
   setEfficiency: (value: number | null) => void;
   selectCar: (id: string | null) => void;
   addCar: (draft: { model: string; name?: string; capacity: number }) => boolean;
-  updateCar: (
-    id: string,
-    draft: { model: string; name?: string; capacity: number },
-  ) => boolean;
+  updateCar: (id: string, draft: { model: string; name?: string; capacity: number }) => boolean;
   removeCar: (id: string) => void;
   reset: () => void;
   errorFor: (field: string) => string | undefined;
@@ -77,16 +73,21 @@ export function useCalculator(storage?: StoragePort): UseCalculator {
     setHydrated(true);
   }, [carsService, persistence]);
 
-  const patch = useCallback(
-    (changes: Partial<BatteryState>) => {
-      setState((previous) => {
-        const next = normaliseBatteryState({ ...previous, ...changes });
-        if (!persistence.save(next)) setStorageAvailable(false);
-        return next;
-      });
-    },
-    [persistence],
-  );
+  /**
+   * Persists every state change once hydration has finished.
+   *
+   * Keeping the write out of the setters means a half-typed value is never
+   * normalised on its way into state — `validateBatteryInputs` has to see the raw
+   * number in order to raise an inline error (PRD 8.1).
+   */
+  useEffect(() => {
+    if (!hydrated) return;
+    if (!persistence.save(state)) setStorageAvailable(false);
+  }, [state, persistence, hydrated]);
+
+  const patch = useCallback((changes: Partial<BatteryState>) => {
+    setState((previous) => ({ ...previous, ...changes }));
+  }, []);
 
   const setCapacity = useCallback((value: number) => patch({ totalCapacity: value }), [patch]);
 
@@ -109,10 +110,7 @@ export function useCalculator(storage?: StoragePort): UseCalculator {
    * Efficiency is optional, so `null` is a meaningful value rather than "unset":
    * passing it through verbatim is what makes the range read "N/A" (PRD 2.2).
    */
-  const setEfficiency = useCallback(
-    (value: number | null) => patch({ efficiency: value === null ? null : value }),
-    [patch],
-  );
+  const setEfficiency = useCallback((value: number | null) => patch({ efficiency: value }), [patch]);
 
   const selectCar = useCallback(
     (id: string | null) => {
@@ -132,10 +130,16 @@ export function useCalculator(storage?: StoragePort): UseCalculator {
     (draft: { model: string; name?: string; capacity: number }) => {
       const outcome = carsService.add(draft);
       if (!outcome.ok) return false;
+
+      // A newly registered car is immediately usable: selecting it keeps the
+      // garage and the capacity field in sync, otherwise the user would add a
+      // car and still have to find it in the dropdown.
+      carsService.setActiveId(outcome.car.id);
       setCars(carsService.list());
+      patch({ carId: outcome.car.id, totalCapacity: outcome.car.capacity });
       return true;
     },
-    [carsService],
+    [carsService, patch],
   );
 
   const updateCar = useCallback(
@@ -144,25 +148,19 @@ export function useCalculator(storage?: StoragePort): UseCalculator {
       if (!outcome.ok) return false;
       setCars(carsService.list());
       // Keep the calculator in sync when the edited car is the active one.
-      setState((previous) => {
-        if (previous.carId !== id) return previous;
-        const next = normaliseBatteryState({ ...previous, totalCapacity: outcome.car.capacity });
-        persistence.save(next);
-        return next;
-      });
+      setState((previous) =>
+        previous.carId === id ? { ...previous, totalCapacity: outcome.car.capacity } : previous,
+      );
       return true;
     },
-    [carsService, persistence],
+    [carsService],
   );
 
   const removeCar = useCallback(
     (id: string) => {
       if (!carsService.remove(id)) return;
       setCars(carsService.list());
-      setState((previous) => {
-        if (previous.carId !== id) return previous;
-        return normaliseBatteryState({ ...previous, carId: null });
-      });
+      setState((previous) => (previous.carId === id ? { ...previous, carId: null } : previous));
     },
     [carsService],
   );

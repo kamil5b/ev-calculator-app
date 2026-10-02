@@ -63,7 +63,11 @@ describe('CarModelService', () => {
       const created = service.add({ model: 'ID.3', capacity: 77 });
       if (!created.ok) throw new Error('setup failed');
 
-      const outcome = service.update(created.car.id, { model: 'ID.3 Performance', name: 'Fast', capacity: 84 });
+      const outcome = service.update(created.car.id, {
+        model: 'ID.3 Performance',
+        name: 'Fast',
+        capacity: 84,
+      });
       expect(outcome.ok).toBe(true);
       if (!outcome.ok) return;
 
@@ -128,10 +132,12 @@ describe('CarModelService', () => {
       service.add({ model: 'Tesla Model 3', name: 'Daily driver', capacity: 82 });
       service.add({ model: 'ID.3', capacity: 77 });
 
-      expect(service.listWithLabels().map((entry) => entry.label).sort()).toEqual([
-        'Daily driver',
-        'ID.3',
-      ]);
+      expect(
+        service
+          .listWithLabels()
+          .map((entry) => entry.label)
+          .sort(),
+      ).toEqual(['Daily driver', 'ID.3']);
     });
   });
 

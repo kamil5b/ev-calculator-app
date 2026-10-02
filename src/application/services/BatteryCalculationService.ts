@@ -1,5 +1,11 @@
 import type { BatteryState } from '../../domain/entities/BatteryState';
-import { clampPercent, round0, round1, sanitiseCapacity, sanitiseEfficiency } from '../../domain/use-cases/math';
+import {
+  clampPercent,
+  round0,
+  round1,
+  sanitiseCapacity,
+  sanitiseEfficiency,
+} from '../../domain/use-cases/math';
 import { calculateCurrentKWh } from '../../domain/use-cases/CalculateCurrentKWh';
 import { calculateNeededKWh } from '../../domain/use-cases/CalculateNeededKWh';
 import { calculateRangeToMinimum } from '../../domain/use-cases/CalculateRange';
@@ -46,7 +52,10 @@ export class BatteryCalculationService {
     );
 
     const fullRangeKWh = (clampPercent(state.currentBattery) / 100) * capacity;
-    const fullRangeKm = efficiency === null || fullRangeKWh <= 0 ? null : round0(fullRangeKWh / efficiency);
+    // Same unit conversion as the domain use case: efficiency is kWh per 100 km,
+    // so the quotient is a count of hundred-kilometre units.
+    const fullRangeKm =
+      efficiency === null || fullRangeKWh <= 0 ? null : round0((fullRangeKWh / efficiency) * 100);
 
     return {
       currentKWh,

@@ -7,10 +7,7 @@ import { round1 } from './math';
  * Business rule (PRD 2.2): `currentKWh = (currentBattery / 100) × totalCapacity`,
  * rounded to one decimal so the UI never shows float noise.
  */
-export function calculateCurrentKWh({
-  currentBattery,
-  totalCapacity,
-}: CurrentKWhInput): number {
+export function calculateCurrentKWh({ currentBattery, totalCapacity }: CurrentKWhInput): number {
   return round1((clampPercent(currentBattery) / 100) * sanitiseCapacity(totalCapacity));
 }
 

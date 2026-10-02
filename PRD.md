@@ -605,6 +605,18 @@ describe('BatteryCalculator', () => {
   - Calculation: neededKWh × ratePerKWh
   - Output: "Charging to target: €X.XX"
 
+- [ ] **Unit conversion:** switch distance display between kilometres and miles
+  - **Toggle:** `km ⇄ mi`, persisted with the calculator state (default `km`)
+  - **Scope:** the efficiency input unit flips with it — `kWh/100km` ↔ `kWh/100mi` — so the input and the range output never disagree. Validation bounds convert with it (5–30 kWh/100km → 8.0–48.3 kWh/100mi), as do the preset chips.
+  - **Conversion:** `1 mi = 1.609344 km`; range is rounded whole in the target unit.
+  - **Calculation:**
+    ```
+    mi = km / 1.609344
+    km = mi × 1.609344
+    ```
+  - **Example:** 169 km → 105 mi; efficiency 17 kWh/100km → 10.6 kWh/100mi
+  - **Note:** battery capacity stays in kWh — it is energy, not distance, so no conversion applies.
+
 ---
 
 ## 11. Security & Privacy
@@ -632,35 +644,35 @@ describe('BatteryCalculator', () => {
 ## 12. Definition of Done
 
 ### Code
-- [ ] All domain logic in pure functions (no framework deps)
-- [ ] Services layer orchestrates cleanly
-- [ ] UI components consume via hooks
-- [ ] No business logic in components
-- [ ] 80%+ test coverage (domain layer)
+- [x] All domain logic in pure functions (no framework deps)
+- [x] Services layer orchestrates cleanly
+- [x] UI components consume via hooks
+- [x] No business logic in components
+- [x] 80%+ test coverage (domain layer)
 - [ ] No console errors/warnings
-- [ ] ESLint & Prettier passing
+- [x] ESLint & Prettier passing
 
 ### Features
-- [ ] All calculations correct (manual verification)
-- [ ] Inputs validate on change
-- [ ] Outputs update real-time
-- [ ] localStorage persists & recovers
+- [x] All calculations correct (manual verification)
+- [x] Inputs validate on change
+- [x] Outputs update real-time
+- [x] localStorage persists & recovers
 - [ ] Works offline (tested in DevTools)
 
 ### PWA
-- [ ] manifest.json valid
+- [x] manifest.json valid
 - [ ] Service Worker installed & caches files
 - [ ] "Install" prompt appears on mobile
 - [ ] App icon appears on home screen
 - [ ] Works standalone (no browser chrome)
 
 ### Performance
-- [ ] Bundle < 20KB JS (gzipped)
+- [x] Bundle < 20KB JS (gzipped)
 - [ ] LCP < 2.5s on slow 4G
 - [ ] Lighthouse PWA score 90+
 
 ### Deployment
-- [ ] Build passes with no warnings
+- [x] Build passes with no warnings
 - [ ] GitHub Pages deployment works
 - [ ] App accessible at public URL
 - [ ] Works on iOS Safari (mobile)

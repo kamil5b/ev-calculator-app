@@ -5,7 +5,7 @@
  * repository, so this only needs re-running when the artwork changes — keeping
  * icon generation out of the build avoids a native image dependency in CI.
  */
-import { readFile, writeFile } from 'node:fs/promises';
+import { writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';

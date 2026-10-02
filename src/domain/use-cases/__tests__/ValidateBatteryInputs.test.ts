@@ -41,9 +41,9 @@ describe('ValidateBatteryInputs', () => {
     expect(validateBatteryInputs(state({ totalCapacity: 201 }))).toHaveLength(1);
   });
 
-  it('rejects a non-numeric capacity', () => {
+  it('reports an emptied capacity as required (PRD 8.1)', () => {
     expect(validateBatteryInputs(state({ totalCapacity: Number.NaN }))).toEqual([
-      { field: 'totalCapacity', message: VALIDATION_MESSAGES.notANumber },
+      { field: 'totalCapacity', message: VALIDATION_MESSAGES.capacityRequired },
     ]);
   });
 

@@ -3,9 +3,10 @@ import { calculateRangeToMinimum } from '../CalculateRange';
 
 describe('CalculateRange', () => {
   it('calculates the range down to the reserve level (Appendix A)', () => {
-    // ((45 - 10) / 100) × 82 / 17 = 168.6 → 169 km. Appendix A prints 205 km,
-    // which corresponds to 62.7 kWh/17... the PRD figure is inconsistent with its
-    // own formula, so the formula in section 2.2 is treated as authoritative.
+    // Appendix A prints 205 km, but its own inputs give
+    // (35 / 100) × 82 / 17 = 168.8 → 169 km. 205 km would require an
+    // efficiency of 14 kWh/100km, not the stated 17. Section 2.2's formula
+    // is authoritative, so the example's figure is the outlier.
     expect(
       calculateRangeToMinimum({
         currentBattery: 45,
@@ -20,9 +21,7 @@ describe('CalculateRange', () => {
     expect(
       calculateRangeToMinimum({ currentBattery: 45, minBattery: 10, totalCapacity: 82, efficiency: null }),
     ).toBeNull();
-    expect(
-      calculateRangeToMinimum({ currentBattery: 45, minBattery: 10, totalCapacity: 82 }),
-    ).toBeNull();
+    expect(calculateRangeToMinimum({ currentBattery: 45, minBattery: 10, totalCapacity: 82 })).toBeNull();
   });
 
   it('guards against division by zero (PRD 8.2)', () => {

@@ -1,0 +1,82 @@
+---
+import '../styles/globals.css';
+import { APPLE_TOUCH_ICON, BASE_PATH, FAVICON, PWA_MANIFEST, THEME_COLOR } from '../infrastructure/config/site';
+
+type Props = {
+  title?: string;
+  description?: string;
+};
+
+const {
+  title = 'EV Battery Calculator',
+  description = 'Calculate EV battery metrics offline: remaining range, charge needed and usable pack energy. Private, offline-first, no account.',
+} = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+
+    <meta name="theme-color" content={THEME_COLOR} />
+    <meta name="color-scheme" content="light" />
+    <link rel="manifest" href={`${BASE_PATH}/manifest.webmanifest`} />
+    <link rel="icon" type="image/svg+xml" href={FAVICON} />
+    <link rel="apple-touch-icon" href={APPLE_TOUCH_ICON} />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content={PWA_MANIFEST.short_name} />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="referrer" content="no-referrer" />
+  </head>
+
+  <body>
+    <a
+      href="#main"
+      class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:rounded-lg focus:bg-slate-900 focus:px-4 focus:py-2 focus:text-white"
+    >
+      Skip to calculator
+    </a>
+
+    <slot />
+
+    <script>
+      /**
+       * Registers the service worker that powers offline use (PRD 4.1, 4.3).
+       *
+       * Production only: the dev server serves unbundled modules, so precaching
+       * them would hand the developer a stale app. Offline behaviour is verified
+       * with `npm run build && npm run preview`, which runs the real bundle.
+       */
+      if (import.meta.env.PROD) {
+        const register = () => {
+          if (!('serviceWorker' in navigator)) return;
+
+          // `BASE_URL` is configured without a trailing slash, so normalise it
+          // before appending the script name.
+          const base = import.meta.env.BASE_URL.endsWith('/')
+            ? import.meta.env.BASE_URL
+            : `${import.meta.env.BASE_URL}/`;
+
+          window.addEventListener('load', () => {
+            navigator.serviceWorker
+              .register(`${base}sw.js`, { scope: base })
+              .catch(() => {
+                // Offline support is an enhancement; never surface it as an error.
+              });
+          });
+        };
+
+        // Registration is deferred to idle time so it never competes with the
+        // island bundle for bandwidth on a slow connection.
+        if ('requestIdleCallback' in window) {
+          window.requestIdleCallback(register, { timeout: 2000 });
+        } else {
+          register();
+        }
+      }
+    </script>
+  </body>
+</html>

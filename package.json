@@ -1,0 +1,50 @@
+{
+  "name": "ev-calculator-app",
+  "type": "module",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Offline-first EV battery calculator PWA built with Astro, Preact and Clean Architecture.",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "astro dev",
+    "start": "astro dev",
+    "build": "astro build && node scripts/check-budget.mjs",
+    "preview": "astro preview",
+    "check": "astro check",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "deploy": "npm run build"
+  },
+  "dependencies": {
+    "preact": "^10.6.5"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.10",
+    "@astrojs/preact": "^6.0.5",
+    "@tailwindcss/vite": "^4.3.3",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/preact": "^3.2.4",
+    "@types/node": "^22.10.0",
+    "@vitest/coverage-v8": "^5.0.3",
+    "astro": "^7.3.5",
+    "clsx": "^2.1.1",
+    "eslint": "^9.39.5",
+    "eslint-plugin-astro": "^1.7.0",
+    "eslint-plugin-jsx-a11y": "^6.10.2",
+    "globals": "^15.15.0",
+    "jsdom": "^27.4.0",
+    "prettier": "^3.9.9",
+    "prettier-plugin-astro": "^1.1.0",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.71.0",
+    "vitest": "^5.0.3"
+  }
+}

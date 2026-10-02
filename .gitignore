@@ -1,0 +1,65 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build output
+dist/
+.output/
+.vercel/
+.netlify/
+
+# Astro
+.astro/
+astro.config.mjs.timestamp-*
+.astro/types.d.ts
+
+# Generated TypeScript types
+*.tsbuildinfo
+
+# Test output
+coverage/
+.nyc_output/
+test-results/
+playwright-report/
+
+# Caches
+.cache/
+.eslintcache
+stylelintcache
+.vite/
+.turbo/
+.parcel-cache/
+
+# Environment — never commit real values
+.env
+.env.*
+!.env.example
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Editors
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+.AppleDouble
+.LSOverride
+
+# Local tooling scratch files
+tmp/
+*.local

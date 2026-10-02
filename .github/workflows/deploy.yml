@@ -1,0 +1,95 @@
+name: Deploy to GitHub Pages
+
+# PRD 14: push to main → tests run → build → deploy to GitHub Pages.
+on:
+  push:
+    branches: [main]
+  # Manual re-run from the Actions tab, plus a safety net if the first deploy fails.
+  workflow_dispatch:
+
+# Only one deployment at a time; never cancel a deploy that is already live.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    name: Test, typecheck and build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Unit and component tests
+        run: npm run test
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Format check
+        run: npm run format:check
+
+      - name: Typecheck
+        run: npm run check
+
+      - name: Build
+        run: npm run build
+        env:
+          # The app is served from https://<owner>.github.io/<repo>/.
+          SITE_URL: ${{ vars.SITE_URL }}
+          BASE_PATH: ${{ vars.BASE_PATH }}
+
+      - name: Verify the size budget
+        run: node scripts/check-budget.mjs
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    name: Publish to GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
+
+  # Fails the run if the deployment ever stops being live, so a broken publish
+  # surfaces on the commit rather than months later.
+  verify:
+    name: Verify deployment is live
+    needs: deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check published URL
+        run: |
+          url="${{ steps.deployment.outputs.page_url }}"
+          echo "Verifying ${url}"
+          for attempt in 1 2 3 4 5 6 7 8 9 10; do
+            status=$(curl -s -o /dev/null -w '%{http_code}' "${url}" || true)
+            if [ "${status}" = "200" ]; then
+              echo "Deployment is live (HTTP ${status})"
+              exit 0
+            fi
+            echo "Attempt ${attempt}: HTTP ${status}, retrying in 15s"
+            sleep 15
+          done
+          echo "Deployment did not return HTTP 200" >&2
+          exit 1

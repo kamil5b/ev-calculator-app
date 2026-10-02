@@ -1,0 +1,119 @@
+@import 'tailwindcss';
+
+/*
+ * Design tokens. Tailwind v4 is configured from CSS, so the palette lives here
+ * rather than in a JavaScript config file. Values are tuned for WCAG AA contrast
+ * (PRD 5.4): every text/background pair below clears 4.5:1.
+ */
+@theme {
+  --color-brand-50: #eef6ff;
+  --color-brand-500: #0f766e;
+  --color-brand-600: #0d5f59;
+  --color-brand-700: #0b4d48;
+}
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+
+  html {
+    /* 16px base keeps text readable without pinch-zoom on mobile (PRD 5.3). */
+    font-size: 16px;
+    -webkit-text-size-adjust: 100%;
+    /* Stops iOS Safari flashing the page white when switching to standalone. */
+    background-color: #ffffff;
+  }
+
+  body {
+    @apply bg-white text-slate-900 antialiased;
+    /* Respects the iOS home-indicator safe area. */
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    /* Prevents the rubber-band effect revealing white behind the app shell. */
+    overscroll-behavior-y: none;
+  }
+
+  /* Visible focus for keyboard users on every interactive element. */
+  :focus-visible {
+    outline: 2px solid var(--color-slate-900);
+    outline-offset: 2px;
+  }
+
+  /* Respect users who ask for less motion. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer components {
+  /*
+   * Range input styling.
+   *
+   * `appearance: none` removes the platform chrome so the track and thumb can be
+   * painted consistently across browsers. The filled portion uses a custom
+   * property set inline by the `Slider` component, which avoids a layout
+   * measurement pass on every render.
+   */
+  .ev-slider {
+    --slider-fill: 0%;
+  }
+
+  .ev-slider::-webkit-slider-runnable-track {
+    height: 0.5rem;
+    border-radius: 9999px;
+    background: linear-gradient(
+      to right,
+      var(--color-slate-900) 0%,
+      var(--color-slate-900) var(--slider-fill),
+      var(--color-slate-200) var(--slider-fill),
+      var(--color-slate-200) 100%
+    );
+  }
+
+  .ev-slider::-moz-range-track {
+    height: 0.5rem;
+    border-radius: 9999px;
+    background: var(--color-slate-200);
+  }
+
+  .ev-slider::-moz-range-progress {
+    height: 0.5rem;
+    border-radius: 9999px;
+    background: var(--color-slate-900);
+  }
+
+  .ev-slider::-webkit-slider-thumb {
+    appearance: none;
+    height: 1.5rem;
+    width: 1.5rem;
+    margin-top: -0.5rem;
+    border-radius: 9999px;
+    background: #ffffff;
+    border: 2px solid var(--color-slate-900);
+    box-shadow: var(--tw-shadow-sm);
+  }
+
+  .ev-slider::-moz-range-thumb {
+    height: 1.5rem;
+    width: 1.5rem;
+    border-radius: 9999px;
+    background: #ffffff;
+    border: 2px solid var(--color-slate-900);
+  }
+
+  .ev-slider:focus-visible::-webkit-slider-thumb {
+    outline: 2px solid var(--color-slate-900);
+    outline-offset: 2px;
+  }
+
+  .ev-slider:focus-visible::-moz-range-thumb {
+    outline: 2px solid var(--color-slate-900);
+    outline-offset: 2px;
+  }
+}

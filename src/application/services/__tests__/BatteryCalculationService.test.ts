@@ -108,28 +108,9 @@ describe('BatteryCalculationService', () => {
       expect(result.labels.chargeAtTarget).toBe('You must charge 67.3 kWh (from 18% to 100%)');
     });
 
-    it('prefers the trip efficiency over the calculator one', () => {
+    it('uses the calculator efficiency', () => {
       const result = service.calculate(
-        state({
-          totalCapacity: 82,
-          currentBattery: 80,
-          efficiency: 30,
-          tripEfficiency: 17,
-          tripDistance: 50,
-        }),
-      );
-      expect(result.labels.arrival).toBe('57.1 kWh left (70%)');
-    });
-
-    it('falls back to the calculator efficiency when the override is empty', () => {
-      const result = service.calculate(
-        state({
-          totalCapacity: 82,
-          currentBattery: 80,
-          efficiency: 17,
-          tripEfficiency: null,
-          tripDistance: 50,
-        }),
+        state({ totalCapacity: 82, currentBattery: 80, efficiency: 17, tripDistance: 50 }),
       );
       expect(result.labels.arrival).toBe('57.1 kWh left (70%)');
     });

@@ -21,7 +21,6 @@ export function switchDistanceUnit(state: BatteryState, unit: DistanceUnit): Bat
     ...state,
     distanceUnit: unit,
     efficiency: efficiency(state.efficiency),
-    tripEfficiency: efficiency(state.tripEfficiency),
     tripDistance:
       state.tripDistance === null || !Number.isFinite(state.tripDistance)
         ? state.tripDistance

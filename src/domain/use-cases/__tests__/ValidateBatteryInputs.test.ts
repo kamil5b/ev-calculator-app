@@ -69,9 +69,7 @@ describe('ValidateBatteryInputs', () => {
 
   describe('Phase 2 fields', () => {
     it('accepts empty trip and price fields', () => {
-      expect(
-        isBatteryInputValid(state({ tripDistance: null, tripEfficiency: null, electricityRate: null })),
-      ).toBe(true);
+      expect(isBatteryInputValid(state({ tripDistance: null, electricityRate: null }))).toBe(true);
     });
 
     it('rejects a negative distance or price', () => {
@@ -87,16 +85,8 @@ describe('ValidateBatteryInputs', () => {
       ]);
     });
 
-    it('applies the efficiency bounds to the trip override', () => {
-      expect(validateBatteryInputs(state({ tripEfficiency: 31 }))).toEqual([
-        { field: 'tripEfficiency', message: VALIDATION_MESSAGES.efficiencyRange },
-      ]);
-    });
-
     it('checks efficiency against the mile bounds in mi mode', () => {
-      expect(isBatteryInputValid(state({ distanceUnit: 'mi', efficiency: 8, tripEfficiency: 48.3 }))).toBe(
-        true,
-      );
+      expect(isBatteryInputValid(state({ distanceUnit: 'mi', efficiency: 8 }))).toBe(true);
       expect(validateBatteryInputs(state({ distanceUnit: 'mi', efficiency: 50 }))).toEqual([
         { field: 'efficiency', message: 'Efficiency must be between 8 and 48.3 kWh/100mi' },
       ]);

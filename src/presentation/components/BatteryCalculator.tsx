@@ -80,7 +80,6 @@ export function BatteryCalculator({ storage }: BatteryCalculatorProps) {
           result={calculator.result}
           errorFor={calculator.errorFor}
           onTripDistanceChange={calculator.setTripDistance}
-          onTripEfficiencyChange={calculator.setTripEfficiency}
         />
       </main>
 

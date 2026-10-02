@@ -27,7 +27,6 @@ export interface UseCalculator {
   setEfficiency: (value: number | null) => void;
   setDistanceUnit: (unit: DistanceUnit) => void;
   setTripDistance: (value: number | null) => void;
-  setTripEfficiency: (value: number | null) => void;
   setElectricityRate: (value: number | null) => void;
   selectCar: (id: string | null) => void;
   addCar: (draft: { model: string; name?: string; capacity: number }) => boolean;
@@ -126,7 +125,6 @@ export function useCalculator(storage?: StoragePort): UseCalculator {
 
   // The Phase 2 fields are optional like efficiency: `null` means "left empty".
   const setTripDistance = useCallback((value: number | null) => patch({ tripDistance: value }), [patch]);
-  const setTripEfficiency = useCallback((value: number | null) => patch({ tripEfficiency: value }), [patch]);
   const setElectricityRate = useCallback(
     (value: number | null) => patch({ electricityRate: value }),
     [patch],
@@ -215,7 +213,6 @@ export function useCalculator(storage?: StoragePort): UseCalculator {
     setEfficiency,
     setDistanceUnit,
     setTripDistance,
-    setTripEfficiency,
     setElectricityRate,
     selectCar,
     addCar,

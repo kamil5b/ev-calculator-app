@@ -10,20 +10,18 @@ const state = (overrides: Partial<BatteryState> = {}): BatteryState => ({
 
 describe('SwitchDistanceUnit', () => {
   it('converts efficiency and trip distance to miles', () => {
-    const result = switchDistanceUnit(state({ efficiency: 17, tripDistance: 50, tripEfficiency: 20 }), 'mi');
+    const result = switchDistanceUnit(state({ efficiency: 17, tripDistance: 50 }), 'mi');
     expect(result.distanceUnit).toBe('mi');
     // A mile is longer, so consumption per 100 mi is higher: 17 × 1.609344 = 27.36.
     expect(result.efficiency).toBeCloseTo(27.36, 2);
-    expect(result.tripEfficiency).toBeCloseTo(32.19, 2);
     expect(result.tripDistance).toBeCloseTo(31.07, 2);
   });
 
   it('round-trips without drift in either direction', () => {
-    const fromKm = state({ efficiency: 17, tripDistance: 50, tripEfficiency: 15.5 });
+    const fromKm = state({ efficiency: 17, tripDistance: 50 });
     const viaMi = switchDistanceUnit(switchDistanceUnit(fromKm, 'mi'), 'km');
     expect(viaMi.efficiency).toBeCloseTo(17, 9);
     expect(viaMi.tripDistance).toBeCloseTo(50, 9);
-    expect(viaMi.tripEfficiency).toBeCloseTo(15.5, 9);
 
     const fromMi = state({ distanceUnit: 'mi', efficiency: 27.4, tripDistance: 10.4 });
     const viaKm = switchDistanceUnit(switchDistanceUnit(fromMi, 'km'), 'mi');
@@ -38,13 +36,9 @@ describe('SwitchDistanceUnit', () => {
   });
 
   it('leaves empty and half-typed fields untouched', () => {
-    const result = switchDistanceUnit(
-      state({ efficiency: null, tripDistance: Number.NaN, tripEfficiency: null }),
-      'mi',
-    );
+    const result = switchDistanceUnit(state({ efficiency: null, tripDistance: Number.NaN }), 'mi');
     expect(result.efficiency).toBeNull();
     expect(result.tripDistance).toBeNaN();
-    expect(result.tripEfficiency).toBeNull();
   });
 
   it('does not touch battery or price fields', () => {

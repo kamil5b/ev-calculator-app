@@ -18,7 +18,6 @@ export type BatteryField =
   | 'minBattery'
   | 'efficiency'
   | 'tripDistance'
-  | 'tripEfficiency'
   | 'electricityRate';
 
 /**
@@ -44,7 +43,6 @@ export function validateBatteryInputs(inputs: BatteryState): FieldError[] {
   errors.push(...validatePercent('minBattery', inputs.minBattery));
 
   errors.push(...validateEfficiency('efficiency', inputs.efficiency, inputs.distanceUnit));
-  errors.push(...validateEfficiency('tripEfficiency', inputs.tripEfficiency, inputs.distanceUnit));
   errors.push(
     ...validateNonNegative('tripDistance', inputs.tripDistance, VALIDATION_MESSAGES.distanceNegative),
   );

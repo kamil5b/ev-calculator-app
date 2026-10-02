@@ -36,7 +36,6 @@ describe('PersistenceService', () => {
         efficiency: 27.4,
         distanceUnit: 'mi' as const,
         tripDistance: 31.1,
-        tripEfficiency: 30,
         electricityRate: 0.35,
       };
       expect(service.save(state)).toBe(true);
@@ -222,7 +221,6 @@ describe('PersistenceService Phase 2 fields', () => {
     const loaded = service.load();
     expect(loaded.distanceUnit).toBe('km');
     expect(loaded.tripDistance).toBeNull();
-    expect(loaded.tripEfficiency).toBeNull();
     expect(loaded.electricityRate).toBeNull();
   });
 
@@ -233,9 +231,8 @@ describe('PersistenceService Phase 2 fields', () => {
 
   it('checks efficiency against the bounds of the stored unit', () => {
     // 8.0 kWh/100mi is valid, but would be below the 5–30 kWh/100km window as km.
-    storage.setItem(KEY, JSON.stringify({ distanceUnit: 'mi', efficiency: 8, tripEfficiency: 48.3 }));
+    storage.setItem(KEY, JSON.stringify({ distanceUnit: 'mi', efficiency: 8 }));
     expect(service.load().efficiency).toBe(8);
-    expect(service.load().tripEfficiency).toBe(48.3);
 
     storage.setItem(KEY, JSON.stringify({ distanceUnit: 'km', efficiency: 40 }));
     expect(service.load().efficiency).toBeNull();

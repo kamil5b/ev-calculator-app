@@ -29,7 +29,7 @@ npm ci        # clean install from the lockfile
 
 ```bash
 npm run dev            # dev server on http://localhost:3000
-npm test               # run the Vitest suite once (252 tests)
+npm test               # run the Vitest suite once (250 tests)
 npm run test:watch     # watch mode
 npm run test:coverage  # coverage report against the 80% gate
 npm run lint           # ESLint (flat config)

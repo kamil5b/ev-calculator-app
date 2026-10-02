@@ -572,7 +572,7 @@ describe('BatteryCalculator', () => {
   - **Inputs:**
     - Distance to charger (km)
     - Current battery % (where you are now)
-    - Efficiency (kWh/100km) — pre-filled from the calculator, editable for this trip (e.g. highway vs city)
+    - Efficiency (kWh/100km) — taken from the calculator's efficiency input, not entered separately
   - **Calculation:**
     ```
     kWh_used_for_trip = (distance_km / 100) × efficiency
@@ -600,7 +600,7 @@ describe('BatteryCalculator', () => {
   - **Inputs:**
     - Distance to target (km)
     - Current battery % (where you are now)
-    - Efficiency (kWh/100km) — pre-filled from the calculator, editable for this trip (e.g. highway vs city)
+    - Efficiency (kWh/100km) — taken from the calculator's efficiency input, not entered separately
   - **Calculation:**
     ```
     kWh_used_for_trip = (distance_km / 100) × efficiency

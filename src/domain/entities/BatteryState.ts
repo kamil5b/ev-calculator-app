@@ -24,8 +24,6 @@ export interface BatteryState {
   readonly distanceUnit: DistanceUnit;
   /** Distance to the trip target (e.g. a charger), or `null` when not planning a trip. */
   readonly tripDistance: number | null;
-  /** Per-trip consumption override; `null` falls back to {@link efficiency}. */
-  readonly tripEfficiency: number | null;
   /** Electricity price per kWh, or `null` when the user has not supplied one. */
   readonly electricityRate: number | null;
 }
@@ -75,6 +73,5 @@ export const DEFAULT_BATTERY_STATE: BatteryState = {
   efficiency: 17,
   distanceUnit: 'km',
   tripDistance: null,
-  tripEfficiency: null,
   electricityRate: null,
 };

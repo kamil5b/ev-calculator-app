@@ -131,15 +131,16 @@ describe('BatteryCalculator', () => {
       expect(screen.getByText('You must charge 24.9 kWh (from 70% to 100%)')).toBeInTheDocument();
     });
 
-    it('uses the trip efficiency override when given', () => {
+    it('uses the efficiency from the battery card', () => {
       renderCalculator();
       fireEvent.change(screen.getByLabelText(/total battery capacity/i), { target: { value: '82' } });
       fireEvent.change(screen.getByRole('slider', { name: /current battery/i }), { target: { value: '80' } });
       fireEvent.change(screen.getByLabelText(/distance to target/i), { target: { value: '50' } });
-      fireEvent.change(screen.getByLabelText(/trip efficiency/i), { target: { value: '25' } });
+      fireEvent.change(screen.getByLabelText(/^efficiency/i), { target: { value: '25' } });
 
       // 50 km at 25 kWh/100km = 12.5 kWh → 53.1 kWh (65%).
       expect(screen.getByText('53.1 kWh left (65%)')).toBeInTheDocument();
+      expect(screen.getByText(/uses your efficiency above \(25 kWh\/100km\)/i)).toBeInTheDocument();
     });
 
     it('warns when the target is too far away', () => {

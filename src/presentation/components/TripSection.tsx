@@ -1,6 +1,6 @@
 import type { CalculationResult } from '../../application/dto/CalculationResult';
 import type { BatteryState } from '../../domain/entities/BatteryState';
-import { efficiencyBounds, efficiencyUnitLabel } from '../../domain/entities/DistanceUnit';
+import { efficiencyUnitLabel } from '../../domain/entities/DistanceUnit';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './common/Card';
 import { fromFieldValue, Input, toFieldValue } from './common/Input';
 
@@ -9,26 +9,18 @@ export type TripSectionProps = {
   result: CalculationResult;
   errorFor: (field: string) => string | undefined;
   onTripDistanceChange: (value: number | null) => void;
-  onTripEfficiencyChange: (value: number | null) => void;
 };
 
 /**
  * Battery and charge estimators (PRD 10, Phase 2).
  *
  * Both answer "what happens when I reach that charger?" from the same inputs,
- * so they share one card. The trip efficiency is an override: left empty it
- * uses the calculator's value, which the placeholder shows.
+ * so they share one card. Consumption comes from the efficiency field in the
+ * battery card, so there is a single source of truth for it.
  */
-export function TripSection({
-  state,
-  result,
-  errorFor,
-  onTripDistanceChange,
-  onTripEfficiencyChange,
-}: TripSectionProps) {
+export function TripSection({ state, result, errorFor, onTripDistanceChange }: TripSectionProps) {
   const unit = state.distanceUnit;
-  const bounds = efficiencyBounds(unit);
-  const calculatorEfficiency = toFieldValue(state.efficiency);
+  const efficiency = toFieldValue(state.efficiency);
 
   return (
     <Card aria-labelledby="trip-heading">
@@ -50,26 +42,12 @@ export function TripSection({
           value={toFieldValue(state.tripDistance)}
           placeholder="10"
           error={errorFor('tripDistance')}
-          onValueChange={(value) => onTripDistanceChange(fromFieldValue(value))}
-        />
-
-        <Input
-          label="Trip efficiency"
-          type="number"
-          inputMode="decimal"
-          min={bounds.min}
-          max={bounds.max}
-          step={0.1}
-          unit={efficiencyUnitLabel(unit)}
-          value={toFieldValue(state.tripEfficiency)}
-          placeholder={calculatorEfficiency}
-          error={errorFor('tripEfficiency')}
           hint={
-            calculatorEfficiency === ''
-              ? 'Needed for the estimate, as the calculator has no efficiency'
-              : 'Leave empty to use the calculator efficiency, or adjust for this trip (e.g. highway)'
+            efficiency === ''
+              ? 'Add an efficiency above to see the estimate'
+              : `Uses your efficiency above (${efficiency} ${efficiencyUnitLabel(unit)})`
           }
-          onValueChange={(value) => onTripEfficiencyChange(fromFieldValue(value))}
+          onValueChange={(value) => onTripDistanceChange(fromFieldValue(value))}
         />
 
         {result.labels.arrival !== null && result.labels.chargeAtTarget !== null && (

@@ -59,8 +59,6 @@ export class BatteryCalculationService {
     const fullRange =
       efficiency === null || fullRangeKWh <= 0 ? null : round0((fullRangeKWh / efficiency) * 100);
 
-    // The trip efficiency is an override; an empty field means "same as the
-    // calculator", which is what makes the field read as pre-filled.
     const trip =
       state.tripDistance === null
         ? null
@@ -68,7 +66,7 @@ export class BatteryCalculationService {
             currentBattery: state.currentBattery,
             totalCapacity: capacity,
             distance: state.tripDistance,
-            efficiency: sanitiseEfficiency(state.tripEfficiency) ?? efficiency,
+            efficiency,
           });
 
     const chargeCost = calculateChargeCost({ kWh: neededKWh, ratePerKWh: state.electricityRate });

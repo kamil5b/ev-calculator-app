@@ -84,7 +84,6 @@ export function normaliseBatteryState(raw: Partial<Record<keyof BatteryState, un
         : coerceEfficiency(raw.efficiency, distanceUnit),
     distanceUnit,
     tripDistance: coerceNonNegative(raw.tripDistance),
-    tripEfficiency: coerceEfficiency(raw.tripEfficiency, distanceUnit),
     electricityRate: coerceNonNegative(raw.electricityRate),
   };
 }

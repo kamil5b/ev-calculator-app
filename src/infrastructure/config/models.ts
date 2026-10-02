@@ -1,3 +1,5 @@
+import { convertEfficiency, type DistanceUnit } from '../../domain/entities/DistanceUnit';
+
 /**
  * EV model database (PRD 2.4).
  *
@@ -24,3 +26,11 @@ export const CAPACITY_PRESETS: readonly number[] = [40, 58, 60, 75, 77, 82, 100]
 
 /** Ready-made consumption values (kWh/100km) matching common efficiency classes. */
 export const EFFICIENCY_PRESETS: readonly number[] = [12, 15, 17, 20, 24] as const;
+
+/**
+ * {@link EFFICIENCY_PRESETS} in the given unit, one decimal, so the chips read
+ * naturally in kWh/100mi (17 → 27.4) as well as kWh/100km.
+ */
+export function efficiencyPresets(unit: DistanceUnit): readonly number[] {
+  return EFFICIENCY_PRESETS.map((preset) => Math.round(convertEfficiency(preset, 'km', unit) * 10) / 10);
+}

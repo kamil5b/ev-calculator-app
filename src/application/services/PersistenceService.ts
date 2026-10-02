@@ -4,11 +4,11 @@ import { STORAGE_KEY } from '../../infrastructure/config/site';
 import {
   MAX_BATTERY_PERCENT,
   MAX_CAPACITY,
-  MAX_EFFICIENCY,
   MIN_BATTERY_PERCENT,
   MIN_CAPACITY,
-  MIN_EFFICIENCY,
 } from '../../domain/entities/validation';
+import { isDistanceUnit, type DistanceUnit } from '../../domain/entities/DistanceUnit';
+import { isEfficiencyInBounds } from '../../domain/use-cases/ValidateBatteryInputs';
 
 /**
  * Reads and writes the calculator state (PRD 2.3).
@@ -60,10 +60,15 @@ export class PersistenceService {
  * live UI state is deliberately *not* normalised, because `validateBatteryInputs`
  * needs to see what the user actually typed in order to report an inline error.
  *
- * The only value that survives as `null` is `efficiency`, which is a legitimate
- * "not provided" rather than a missing field.
+ * The values that survive as `null` are the optional fields (`efficiency` and
+ * the Phase 2 trip/price inputs), where `null` is a legitimate "not provided".
+ * Efficiency bounds depend on the stored unit, so the unit is read first.
  */
 export function normaliseBatteryState(raw: Partial<Record<keyof BatteryState, unknown>>): BatteryState {
+  const distanceUnit = isDistanceUnit(raw.distanceUnit)
+    ? raw.distanceUnit
+    : DEFAULT_BATTERY_STATE.distanceUnit;
+
   return {
     carId: typeof raw.carId === 'string' && raw.carId.length > 0 ? raw.carId : DEFAULT_BATTERY_STATE.carId,
     totalCapacity: coerceCapacity(raw.totalCapacity) ?? DEFAULT_BATTERY_STATE.totalCapacity,
@@ -74,7 +79,13 @@ export function normaliseBatteryState(raw: Partial<Record<keyof BatteryState, un
     // that is present but null was written deliberately: the user cleared the
     // optional efficiency field, so it must stay null.
     efficiency:
-      raw.efficiency === undefined ? DEFAULT_BATTERY_STATE.efficiency : coerceEfficiency(raw.efficiency),
+      raw.efficiency === undefined
+        ? DEFAULT_BATTERY_STATE.efficiency
+        : coerceEfficiency(raw.efficiency, distanceUnit),
+    distanceUnit,
+    tripDistance: coerceNonNegative(raw.tripDistance),
+    tripEfficiency: coerceEfficiency(raw.tripEfficiency, distanceUnit),
+    electricityRate: coerceNonNegative(raw.electricityRate),
   };
 }
 
@@ -114,17 +125,23 @@ export function coerceCapacity(value: unknown): number | null {
 }
 
 /**
- * Returns a 5–30 kWh/100km consumption, or `null`.
+ * Returns a 5–30 kWh/100km (8.0–48.3 kWh/100mi) consumption, or `null`.
  *
  * `null` carries both "field left empty" (legitimate, PRD 2.1) and "value out of
  * range" (invalid). {@link normaliseBatteryState} separates them by checking for
  * an absent key first, so a deliberately cleared field is never resurrected.
  */
-export function coerceEfficiency(value: unknown): number | null {
+export function coerceEfficiency(value: unknown, unit: DistanceUnit = 'km'): number | null {
   if (value === null || value === undefined || value === '') return null;
   const numeric = toNumber(value);
   if (numeric === null) return null;
-  if (numeric < MIN_EFFICIENCY || numeric > MAX_EFFICIENCY) return null;
+  return isEfficiencyInBounds(numeric, unit) ? numeric : null;
+}
+
+/** Returns a finite, non-negative number (distance, price), or `null`. */
+export function coerceNonNegative(value: unknown): number | null {
+  const numeric = toNumber(value);
+  if (numeric === null || numeric < 0) return null;
   return numeric;
 }
 

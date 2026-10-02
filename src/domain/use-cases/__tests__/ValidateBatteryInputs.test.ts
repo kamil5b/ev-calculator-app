@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { validateBatteryInputs, isBatteryInputValid } from '../ValidateBatteryInputs';
+import { validateBatteryInputs, isBatteryInputValid, efficiencyRangeMessage } from '../ValidateBatteryInputs';
 import { DEFAULT_BATTERY_STATE, type BatteryState } from '../../entities/BatteryState';
 import { VALIDATION_MESSAGES } from '../../entities/validation';
 
@@ -65,5 +65,45 @@ describe('ValidateBatteryInputs', () => {
       'targetBattery',
       'totalCapacity',
     ]);
+  });
+
+  describe('Phase 2 fields', () => {
+    it('accepts empty trip and price fields', () => {
+      expect(
+        isBatteryInputValid(state({ tripDistance: null, tripEfficiency: null, electricityRate: null })),
+      ).toBe(true);
+    });
+
+    it('rejects a negative distance or price', () => {
+      expect(validateBatteryInputs(state({ tripDistance: -1, electricityRate: -0.1 }))).toEqual([
+        { field: 'tripDistance', message: VALIDATION_MESSAGES.distanceNegative },
+        { field: 'electricityRate', message: VALIDATION_MESSAGES.rateNegative },
+      ]);
+    });
+
+    it('rejects a half-typed distance', () => {
+      expect(validateBatteryInputs(state({ tripDistance: Number.NaN }))).toEqual([
+        { field: 'tripDistance', message: VALIDATION_MESSAGES.notANumber },
+      ]);
+    });
+
+    it('applies the efficiency bounds to the trip override', () => {
+      expect(validateBatteryInputs(state({ tripEfficiency: 31 }))).toEqual([
+        { field: 'tripEfficiency', message: VALIDATION_MESSAGES.efficiencyRange },
+      ]);
+    });
+
+    it('checks efficiency against the mile bounds in mi mode', () => {
+      expect(isBatteryInputValid(state({ distanceUnit: 'mi', efficiency: 8, tripEfficiency: 48.3 }))).toBe(
+        true,
+      );
+      expect(validateBatteryInputs(state({ distanceUnit: 'mi', efficiency: 50 }))).toEqual([
+        { field: 'efficiency', message: 'Efficiency must be between 8 and 48.3 kWh/100mi' },
+      ]);
+    });
+
+    it('quotes the km bounds unchanged', () => {
+      expect(efficiencyRangeMessage('km')).toBe(VALIDATION_MESSAGES.efficiencyRange);
+    });
   });
 });

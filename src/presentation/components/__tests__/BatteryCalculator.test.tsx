@@ -40,7 +40,7 @@ describe('BatteryCalculator', () => {
     fireEvent.change(screen.getByRole('slider', { name: /current battery/i }), { target: { value: '45' } });
     fireEvent.change(screen.getByRole('slider', { name: /target battery/i }), { target: { value: '90' } });
     fireEvent.change(screen.getByRole('slider', { name: /minimum battery/i }), { target: { value: '10' } });
-    fireEvent.change(screen.getByLabelText(/efficiency/i), { target: { value: '17' } });
+    fireEvent.change(screen.getByLabelText(/^efficiency/i), { target: { value: '17' } });
 
     expect(screen.getByText('Current battery: 36.9 kWh')).toBeInTheDocument();
     expect(screen.getByText('To reach target: +36.9 kWh')).toBeInTheDocument();
@@ -63,7 +63,7 @@ describe('BatteryCalculator', () => {
 
   it('shows N/A when efficiency is cleared (PRD 2.2)', () => {
     renderCalculator();
-    fireEvent.change(screen.getByLabelText(/efficiency/i), { target: { value: '' } });
+    fireEvent.change(screen.getByLabelText(/^efficiency/i), { target: { value: '' } });
     expect(screen.getByText('Range to minimum: N/A')).toBeInTheDocument();
   });
 
@@ -118,5 +118,65 @@ describe('BatteryCalculator', () => {
     const slider = screen.getByRole('slider', { name: /current battery/i }) as HTMLInputElement;
     fireEvent.input(slider, { target: { value: '33' } });
     expect(slider.value).toBe('33');
+  });
+
+  describe('Phase 2', () => {
+    it('estimates the battery left on arrival and the charge needed there', () => {
+      renderCalculator();
+      fireEvent.change(screen.getByLabelText(/total battery capacity/i), { target: { value: '82' } });
+      fireEvent.change(screen.getByRole('slider', { name: /current battery/i }), { target: { value: '80' } });
+      fireEvent.change(screen.getByLabelText(/distance to target/i), { target: { value: '50' } });
+
+      expect(screen.getByText('57.1 kWh left (70%)')).toBeInTheDocument();
+      expect(screen.getByText('You must charge 24.9 kWh (from 70% to 100%)')).toBeInTheDocument();
+    });
+
+    it('uses the trip efficiency override when given', () => {
+      renderCalculator();
+      fireEvent.change(screen.getByLabelText(/total battery capacity/i), { target: { value: '82' } });
+      fireEvent.change(screen.getByRole('slider', { name: /current battery/i }), { target: { value: '80' } });
+      fireEvent.change(screen.getByLabelText(/distance to target/i), { target: { value: '50' } });
+      fireEvent.change(screen.getByLabelText(/trip efficiency/i), { target: { value: '25' } });
+
+      // 50 km at 25 kWh/100km = 12.5 kWh → 53.1 kWh (65%).
+      expect(screen.getByText('53.1 kWh left (65%)')).toBeInTheDocument();
+    });
+
+    it('warns when the target is too far away', () => {
+      renderCalculator();
+      fireEvent.change(screen.getByLabelText(/distance to target/i), { target: { value: '1000' } });
+      expect(screen.getAllByText('⚠️ Too far away')).toHaveLength(2);
+    });
+
+    it('prices the charge to target', () => {
+      renderCalculator();
+      // Default: 75 kWh pack, 50% → 100% = 37.5 kWh.
+      fireEvent.change(screen.getByLabelText(/electricity price/i), { target: { value: '0.4' } });
+      expect(screen.getByText('Charging to target: €15.00')).toBeInTheDocument();
+    });
+
+    it('switches distances and efficiency to miles and back', () => {
+      renderCalculator();
+      fireEvent.change(screen.getByLabelText(/distance to target/i), { target: { value: '50' } });
+      fireEvent.click(screen.getByRole('button', { name: 'mi' }));
+
+      expect(screen.getByRole('button', { name: 'mi' })).toHaveAttribute('aria-pressed', 'true');
+      expect(screen.getByLabelText(/^efficiency/i)).toHaveValue(27.36);
+      expect(screen.getByLabelText(/distance to target/i)).toHaveValue(31.07);
+      expect(screen.getByText(/range to 0%: \d+ mi/i)).toBeInTheDocument();
+
+      fireEvent.click(screen.getByRole('button', { name: 'km' }));
+      expect(screen.getByLabelText(/^efficiency/i)).toHaveValue(17);
+      expect(screen.getByLabelText(/distance to target/i)).toHaveValue(50);
+    });
+
+    it('persists the unit across reloads', () => {
+      const first = renderCalculator();
+      fireEvent.click(screen.getByRole('button', { name: 'mi' }));
+      first.unmount();
+
+      renderCalculator();
+      expect(screen.getByRole('button', { name: 'mi' })).toHaveAttribute('aria-pressed', 'true');
+    });
   });
 });

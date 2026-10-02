@@ -2,7 +2,7 @@ import type { CalculationResult } from '../../application/dto/CalculationResult'
 import type { BatteryState } from '../../domain/entities/BatteryState';
 import { Card, CardContent, CardHeader, CardTitle } from './common/Card';
 import { Badge } from './common/Badge';
-import { MIN_EFFICIENCY } from '../../domain/entities/validation';
+import { efficiencyBounds, efficiencyUnitLabel } from '../../domain/entities/DistanceUnit';
 
 /** State of charge below which the low-battery badge appears. */
 const LOW_BATTERY_THRESHOLD = 20;
@@ -22,7 +22,9 @@ export type OutputSectionProps = {
 export function OutputSection({ state, result }: OutputSectionProps) {
   const isLow = state.currentBattery <= LOW_BATTERY_THRESHOLD;
   const isDischarging = result.neededKWh < 0;
-  const rangeUnavailable = result.rangeKm === null;
+  const rangeUnavailable = result.range === null;
+  const unit = result.distanceUnit;
+  const bounds = efficiencyBounds(unit);
 
   return (
     <Card aria-labelledby="output-heading">
@@ -42,21 +44,21 @@ export function OutputSection({ state, result }: OutputSectionProps) {
             tone={isDischarging ? 'neutral' : 'positive'}
           />
           <Row
-            label={result.labels.rangeKm}
-            value={rangeUnavailable ? 'N/A' : `${result.rangeKm} km`}
+            label={result.labels.range}
+            value={rangeUnavailable ? 'N/A' : `${result.range} ${unit}`}
             tone={rangeUnavailable ? 'muted' : 'default'}
           />
           <Row label={result.labels.usableKWh} value={`${result.usableKWh} kWh`} />
           <Row
-            label={result.labels.fullRangeKm}
-            value={result.fullRangeKm === null ? 'N/A' : `${result.fullRangeKm} km`}
-            tone={result.fullRangeKm === null ? 'muted' : 'default'}
+            label={result.labels.fullRange}
+            value={result.fullRange === null ? 'N/A' : `${result.fullRange} ${unit}`}
+            tone={result.fullRange === null ? 'muted' : 'default'}
           />
         </dl>
 
         <p class="text-xs text-slate-500">
-          {result.rangeKm === null
-            ? `Add an efficiency between ${MIN_EFFICIENCY} and 30 kWh/100km to see the range.`
+          {result.range === null
+            ? `Add an efficiency between ${bounds.min} and ${bounds.max} ${efficiencyUnitLabel(unit)} to see the range.`
             : `Range respects your ${state.minBattery}% reserve level.`}
         </p>
       </CardContent>

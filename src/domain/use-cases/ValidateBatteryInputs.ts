@@ -1,24 +1,33 @@
 import type { BatteryState } from '../entities/BatteryState';
+import { efficiencyBounds, efficiencyUnitLabel, type DistanceUnit } from '../entities/DistanceUnit';
+import { round1 } from './math';
 import {
   MAX_BATTERY_PERCENT,
   MAX_CAPACITY,
-  MAX_EFFICIENCY,
   MIN_BATTERY_PERCENT,
   MIN_CAPACITY,
-  MIN_EFFICIENCY,
   VALIDATION_MESSAGES,
   type FieldError,
 } from '../entities/validation';
 
 /** Name of a form field, used to place errors beneath the right control. */
-export type BatteryField = 'totalCapacity' | 'currentBattery' | 'targetBattery' | 'minBattery' | 'efficiency';
+export type BatteryField =
+  | 'totalCapacity'
+  | 'currentBattery'
+  | 'targetBattery'
+  | 'minBattery'
+  | 'efficiency'
+  | 'tripDistance'
+  | 'tripEfficiency'
+  | 'electricityRate';
 
 /**
  * Validates the raw form values before they are folded into the state.
  *
  * Rules come straight from PRD 8.1: percentages are whole numbers in 0–100,
  * capacity is a 10–200 kWh decimal and efficiency is an optional 5–30 kWh/100km
- * decimal. Only efficiency may be blank; everything else is required.
+ * (8.0–48.3 kWh/100mi) decimal. The Phase 2 trip and price fields are optional
+ * too: a blank field is `null`, and a filled one must be a non-negative number.
  */
 export function validateBatteryInputs(inputs: BatteryState): FieldError[] {
   const errors: FieldError[] = [];
@@ -34,13 +43,14 @@ export function validateBatteryInputs(inputs: BatteryState): FieldError[] {
   errors.push(...validatePercent('targetBattery', inputs.targetBattery));
   errors.push(...validatePercent('minBattery', inputs.minBattery));
 
-  if (inputs.efficiency !== null) {
-    if (!Number.isFinite(inputs.efficiency)) {
-      errors.push({ field: 'efficiency', message: VALIDATION_MESSAGES.notANumber });
-    } else if (inputs.efficiency < MIN_EFFICIENCY || inputs.efficiency > MAX_EFFICIENCY) {
-      errors.push({ field: 'efficiency', message: VALIDATION_MESSAGES.efficiencyRange });
-    }
-  }
+  errors.push(...validateEfficiency('efficiency', inputs.efficiency, inputs.distanceUnit));
+  errors.push(...validateEfficiency('tripEfficiency', inputs.tripEfficiency, inputs.distanceUnit));
+  errors.push(
+    ...validateNonNegative('tripDistance', inputs.tripDistance, VALIDATION_MESSAGES.distanceNegative),
+  );
+  errors.push(
+    ...validateNonNegative('electricityRate', inputs.electricityRate, VALIDATION_MESSAGES.rateNegative),
+  );
 
   return errors;
 }
@@ -57,5 +67,38 @@ function validatePercent(field: BatteryField, value: number): FieldError[] {
   if (value < MIN_BATTERY_PERCENT || value > MAX_BATTERY_PERCENT) {
     return [{ field, message: VALIDATION_MESSAGES.percentRange }];
   }
+  return [];
+}
+
+/** Range message for the efficiency fields, quoting the bounds in the active unit. */
+export function efficiencyRangeMessage(unit: DistanceUnit): string {
+  const { min, max } = efficiencyBounds(unit);
+  return `Efficiency must be between ${min} and ${max} ${efficiencyUnitLabel(unit)}`;
+}
+
+/**
+ * Bounds check at the inputs' one-decimal precision.
+ *
+ * A value converted from the other unit is kept at full precision (see
+ * `switchDistanceUnit`), so the 8.0 kWh/100mi minimum arrives in km as 4.971;
+ * comparing the rounded value keeps it valid on both sides of the toggle.
+ */
+export function isEfficiencyInBounds(value: number, unit: DistanceUnit): boolean {
+  const { min, max } = efficiencyBounds(unit);
+  const rounded = round1(value);
+  return rounded >= min && rounded <= max;
+}
+
+function validateEfficiency(field: BatteryField, value: number | null, unit: DistanceUnit): FieldError[] {
+  if (value === null) return [];
+  if (!Number.isFinite(value)) return [{ field, message: VALIDATION_MESSAGES.notANumber }];
+  if (!isEfficiencyInBounds(value, unit)) return [{ field, message: efficiencyRangeMessage(unit) }];
+  return [];
+}
+
+function validateNonNegative(field: BatteryField, value: number | null, message: string): FieldError[] {
+  if (value === null) return [];
+  if (!Number.isFinite(value)) return [{ field, message: VALIDATION_MESSAGES.notANumber }];
+  if (value < 0) return [{ field, message }];
   return [];
 }

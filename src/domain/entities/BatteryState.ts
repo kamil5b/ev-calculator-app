@@ -1,3 +1,5 @@
+import type { DistanceUnit } from './DistanceUnit';
+
 /**
  * Domain entity describing the aggregate persisted for the calculator.
  *
@@ -16,8 +18,16 @@ export interface BatteryState {
   readonly targetBattery: number;
   /** Reserve level the user wants to keep, percent 0–100. */
   readonly minBattery: number;
-  /** Consumption in kWh/100km, or `null` when the user has not supplied one. */
+  /** Consumption in kWh/100{@link distanceUnit}, or `null` when the user has not supplied one. */
   readonly efficiency: number | null;
+  /** Unit every distance-shaped field and output is expressed in. */
+  readonly distanceUnit: DistanceUnit;
+  /** Distance to the trip target (e.g. a charger), or `null` when not planning a trip. */
+  readonly tripDistance: number | null;
+  /** Per-trip consumption override; `null` falls back to {@link efficiency}. */
+  readonly tripEfficiency: number | null;
+  /** Electricity price per kWh, or `null` when the user has not supplied one. */
+  readonly electricityRate: number | null;
 }
 
 /** Subset of {@link BatteryState} required to derive current kWh. */
@@ -38,7 +48,17 @@ export interface RangeInput {
   readonly currentBattery: number;
   readonly minBattery: number;
   readonly totalCapacity: number;
-  /** kWh/100km. `null`/absent disables the calculation (PRD 2.2). */
+  /** kWh per 100 distance units. `null`/absent disables the calculation (PRD 2.2). */
+  readonly efficiency?: number | null;
+}
+
+/** Inputs for estimating the pack state on arrival at a trip target. */
+export interface ArrivalInput {
+  readonly currentBattery: number;
+  readonly totalCapacity: number;
+  /** Distance to the target, in the same unit as {@link efficiency}. */
+  readonly distance: number;
+  /** kWh per 100 distance units. `null`/absent disables the calculation. */
   readonly efficiency?: number | null;
 }
 
@@ -53,4 +73,8 @@ export const DEFAULT_BATTERY_STATE: BatteryState = {
   targetBattery: 100,
   minBattery: 0,
   efficiency: 17,
+  distanceUnit: 'km',
+  tripDistance: null,
+  tripEfficiency: null,
+  electricityRate: null,
 };

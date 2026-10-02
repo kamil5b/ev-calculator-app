@@ -2,7 +2,9 @@
 
 An offline-first, installable PWA that calculates EV battery metrics in real time —
 current state of charge in kWh, energy needed to reach a target, and remaining range
-down to a reserve level — with a garage for registering multiple vehicles.
+down to a reserve level — with a garage for registering multiple vehicles, trip
+estimates (battery left on arrival, charge needed at the charger), charging cost, and
+km/mi units.
 
 Built to [PRD.md](./PRD.md) with Astro, Preact and Clean Architecture. All state lives
 in `localStorage`; the app never makes a network request after loading.
@@ -27,7 +29,7 @@ npm ci        # clean install from the lockfile
 
 ```bash
 npm run dev            # dev server on http://localhost:3000
-npm test               # run the Vitest suite once (197 tests)
+npm test               # run the Vitest suite once (252 tests)
 npm run test:watch     # watch mode
 npm run test:coverage  # coverage report against the 80% gate
 npm run lint           # ESLint (flat config)

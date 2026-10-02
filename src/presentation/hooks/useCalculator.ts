@@ -8,6 +8,8 @@ import { batteryCalculationService } from '../../application/services/BatteryCal
 import { validateBatteryInputs } from '../../domain/use-cases/ValidateBatteryInputs';
 import type { FieldError } from '../../domain/entities/validation';
 import { clampPercent } from '../../domain/use-cases/math';
+import { switchDistanceUnit } from '../../domain/use-cases/SwitchDistanceUnit';
+import type { DistanceUnit } from '../../domain/entities/DistanceUnit';
 
 /** What {@link useCalculator} hands to the components. */
 export interface UseCalculator {
@@ -23,6 +25,10 @@ export interface UseCalculator {
   setTargetBattery: (value: number) => void;
   setMinBattery: (value: number) => void;
   setEfficiency: (value: number | null) => void;
+  setDistanceUnit: (unit: DistanceUnit) => void;
+  setTripDistance: (value: number | null) => void;
+  setTripEfficiency: (value: number | null) => void;
+  setElectricityRate: (value: number | null) => void;
   selectCar: (id: string | null) => void;
   addCar: (draft: { model: string; name?: string; capacity: number }) => boolean;
   updateCar: (id: string, draft: { model: string; name?: string; capacity: number }) => boolean;
@@ -112,6 +118,20 @@ export function useCalculator(storage?: StoragePort): UseCalculator {
    */
   const setEfficiency = useCallback((value: number | null) => patch({ efficiency: value }), [patch]);
 
+  /** Converts every distance-shaped field so inputs and outputs stay in agreement. */
+  const setDistanceUnit = useCallback(
+    (unit: DistanceUnit) => setState((previous) => switchDistanceUnit(previous, unit)),
+    [],
+  );
+
+  // The Phase 2 fields are optional like efficiency: `null` means "left empty".
+  const setTripDistance = useCallback((value: number | null) => patch({ tripDistance: value }), [patch]);
+  const setTripEfficiency = useCallback((value: number | null) => patch({ tripEfficiency: value }), [patch]);
+  const setElectricityRate = useCallback(
+    (value: number | null) => patch({ electricityRate: value }),
+    [patch],
+  );
+
   const selectCar = useCallback(
     (id: string | null) => {
       carsService.setActiveId(id);
@@ -193,6 +213,10 @@ export function useCalculator(storage?: StoragePort): UseCalculator {
     setTargetBattery,
     setMinBattery,
     setEfficiency,
+    setDistanceUnit,
+    setTripDistance,
+    setTripEfficiency,
+    setElectricityRate,
     selectCar,
     addCar,
     updateCar,

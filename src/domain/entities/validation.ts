@@ -30,6 +30,8 @@ export const VALIDATION_MESSAGES = {
   capacityRange: `Capacity must be between ${MIN_CAPACITY} and ${MAX_CAPACITY} kWh`,
   efficiencyRange: `Efficiency must be between ${MIN_EFFICIENCY} and ${MAX_EFFICIENCY} kWh/100km`,
   notANumber: 'Must be a valid number',
+  distanceNegative: 'Distance cannot be negative',
+  rateNegative: 'Price cannot be negative',
   capacityRequired: 'Capacity is required',
   modelRequired: 'Model is required',
   carIdInvalid: 'That car no longer exists',

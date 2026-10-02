@@ -24,6 +24,20 @@ export type InputProps = Omit<
   children?: ComponentChildren;
 };
 
+/**
+ * Renders an optional numeric field value: blank for `null` or a half-typed
+ * `NaN`, and at most two decimals so a unit conversion never shows float noise.
+ */
+export function toFieldValue(value: number | null): string {
+  if (value === null || !Number.isFinite(value)) return '';
+  return String(Number(value.toFixed(2)));
+}
+
+/** Parses an optional numeric field: blank → `null`, anything else → `Number`. */
+export function fromFieldValue(value: string): number | null {
+  return value.trim() === '' ? null : Number(value);
+}
+
 let counter = 0;
 
 function nextId(): string {

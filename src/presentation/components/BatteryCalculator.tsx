@@ -2,6 +2,9 @@ import { useCalculator } from '../hooks/useCalculator';
 import { useInstallPrompt } from '../hooks/useInstallPrompt';
 import { InputSection } from './InputSection';
 import { OutputSection } from './OutputSection';
+import { TripSection } from './TripSection';
+import { CostSection } from './CostSection';
+import { UnitToggle } from './UnitToggle';
 import { Button } from './common/Button';
 import { Badge } from './common/Badge';
 import type { StoragePort } from '../../infrastructure/storage/LocalStorageAdapter';
@@ -35,6 +38,7 @@ export function BatteryCalculator({ storage }: BatteryCalculatorProps) {
         <p class="text-sm text-slate-600">
           Remaining range, charge needed and pack energy — calculated on your device, no account required.
         </p>
+        <UnitToggle value={calculator.state.distanceUnit} onChange={calculator.setDistanceUnit} />
       </header>
 
       {!calculator.storageAvailable && (
@@ -63,6 +67,21 @@ export function BatteryCalculator({ storage }: BatteryCalculatorProps) {
         />
 
         <OutputSection state={calculator.state} result={calculator.result} />
+
+        <CostSection
+          state={calculator.state}
+          result={calculator.result}
+          errorFor={calculator.errorFor}
+          onElectricityRateChange={calculator.setElectricityRate}
+        />
+
+        <TripSection
+          state={calculator.state}
+          result={calculator.result}
+          errorFor={calculator.errorFor}
+          onTripDistanceChange={calculator.setTripDistance}
+          onTripEfficiencyChange={calculator.setTripEfficiency}
+        />
       </main>
 
       <footer class="flex items-center justify-between gap-3">

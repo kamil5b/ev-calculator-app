@@ -34,3 +34,10 @@ export function sanitiseEfficiency(efficiency: number | null | undefined): numbe
   if (!Number.isFinite(efficiency) || efficiency <= 0) return null;
   return efficiency;
 }
+
+/** Coerces a price per kWh to a finite, non-negative value. */
+export function sanitiseRate(rate: number | null | undefined): number | null {
+  if (rate === null || rate === undefined) return null;
+  if (!Number.isFinite(rate) || rate < 0) return null;
+  return rate;
+}

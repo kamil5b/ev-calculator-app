@@ -1,8 +1,9 @@
 import type { BatteryState } from '../../domain/entities/BatteryState';
 import { Card, CardContent, CardHeader, CardTitle } from './common/Card';
-import { Input } from './common/Input';
+import { fromFieldValue, Input, toFieldValue } from './common/Input';
 import { Slider } from './common/Slider';
-import { EFFICIENCY_PRESETS } from '../../infrastructure/config/models';
+import { efficiencyPresets } from '../../infrastructure/config/models';
+import { efficiencyBounds, efficiencyUnitLabel } from '../../domain/entities/DistanceUnit';
 import { ModelSelector } from './ModelSelector';
 import type { CarModel } from '../../domain/entities/CarModel';
 import type { CarModelDraftInput } from './ModelSelector';
@@ -43,6 +44,8 @@ export function InputSection({
   onUpdateCar,
   onRemoveCar,
 }: InputSectionProps) {
+  const bounds = efficiencyBounds(state.distanceUnit);
+
   return (
     <>
       <ModelSelector
@@ -87,18 +90,16 @@ export function InputSection({
             label="Efficiency (optional)"
             type="number"
             inputMode="decimal"
-            min={5}
-            max={30}
+            min={bounds.min}
+            max={bounds.max}
             step={0.1}
-            unit="kWh/100km"
-            value={
-              state.efficiency === null || !Number.isFinite(state.efficiency) ? '' : String(state.efficiency)
-            }
-            placeholder="17"
+            unit={efficiencyUnitLabel(state.distanceUnit)}
+            value={toFieldValue(state.efficiency)}
+            placeholder={state.distanceUnit === 'mi' ? '27.4' : '17'}
             error={errorFor('efficiency')}
             hint="Leave empty to skip the range calculation"
-            presets={EFFICIENCY_PRESETS}
-            onValueChange={(value) => onEfficiencyChange(value.trim() === '' ? null : Number(value))}
+            presets={efficiencyPresets(state.distanceUnit)}
+            onValueChange={(value) => onEfficiencyChange(fromFieldValue(value))}
           />
         </CardContent>
       </Card>

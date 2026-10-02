@@ -33,7 +33,11 @@ describe('PersistenceService', () => {
         currentBattery: 45,
         targetBattery: 90,
         minBattery: 10,
-        efficiency: 17,
+        efficiency: 27.4,
+        distanceUnit: 'mi' as const,
+        tripDistance: 31.1,
+        tripEfficiency: 30,
+        electricityRate: 0.35,
       };
       expect(service.save(state)).toBe(true);
       expect(service.load()).toEqual(state);
@@ -192,5 +196,55 @@ describe('safeParse', () => {
 
   it('returns null for invalid JSON', () => {
     expect(safeParse('nope')).toBeNull();
+  });
+});
+
+describe('PersistenceService Phase 2 fields', () => {
+  let storage: MemoryStorageAdapter;
+  let service: PersistenceService;
+
+  beforeEach(() => {
+    storage = new MemoryStorageAdapter();
+    service = new PersistenceService(storage, KEY);
+  });
+
+  it('defaults every Phase 2 field when an older build wrote the payload', () => {
+    storage.setItem(
+      KEY,
+      JSON.stringify({
+        totalCapacity: 82,
+        currentBattery: 45,
+        targetBattery: 90,
+        minBattery: 10,
+        efficiency: 17,
+      }),
+    );
+    const loaded = service.load();
+    expect(loaded.distanceUnit).toBe('km');
+    expect(loaded.tripDistance).toBeNull();
+    expect(loaded.tripEfficiency).toBeNull();
+    expect(loaded.electricityRate).toBeNull();
+  });
+
+  it('falls back to km for an unknown unit', () => {
+    storage.setItem(KEY, JSON.stringify({ distanceUnit: 'furlong' }));
+    expect(service.load().distanceUnit).toBe('km');
+  });
+
+  it('checks efficiency against the bounds of the stored unit', () => {
+    // 8.0 kWh/100mi is valid, but would be below the 5–30 kWh/100km window as km.
+    storage.setItem(KEY, JSON.stringify({ distanceUnit: 'mi', efficiency: 8, tripEfficiency: 48.3 }));
+    expect(service.load().efficiency).toBe(8);
+    expect(service.load().tripEfficiency).toBe(48.3);
+
+    storage.setItem(KEY, JSON.stringify({ distanceUnit: 'km', efficiency: 40 }));
+    expect(service.load().efficiency).toBeNull();
+  });
+
+  it('drops a negative distance or price', () => {
+    storage.setItem(KEY, JSON.stringify({ tripDistance: -5, electricityRate: -1 }));
+    const loaded = service.load();
+    expect(loaded.tripDistance).toBeNull();
+    expect(loaded.electricityRate).toBeNull();
   });
 });

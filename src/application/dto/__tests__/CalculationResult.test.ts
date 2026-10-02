@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatKm, formatKWh, formatSignedKWh } from '../CalculationResult';
+import { formatCost, formatDistance, formatKWh, formatSignedKWh } from '../CalculationResult';
 import { NOT_AVAILABLE } from '../../../domain/entities/validation';
 
 describe('formatKWh', () => {
@@ -49,16 +49,31 @@ describe('formatSignedKWh', () => {
   });
 });
 
-describe('formatKm', () => {
+describe('formatDistance', () => {
   it('renders whole kilometres', () => {
-    expect(formatKm(204.6)).toBe('205 km');
+    expect(formatDistance(204.6)).toBe('205 km');
   });
 
   it('renders zero without a sign', () => {
-    expect(formatKm(0)).toBe('0 km');
+    expect(formatDistance(0)).toBe('0 km');
   });
 
   it('renders N/A for non-finite input', () => {
-    expect(formatKm(Number.NaN)).toBe(NOT_AVAILABLE);
+    expect(formatDistance(Number.NaN)).toBe(NOT_AVAILABLE);
+  });
+
+  it('renders whole miles when asked', () => {
+    expect(formatDistance(104.6, 'mi')).toBe('105 mi');
+  });
+});
+
+describe('formatCost', () => {
+  it('always renders two decimals', () => {
+    expect(formatCost(12.3)).toBe('€12.30');
+    expect(formatCost(0)).toBe('€0.00');
+  });
+
+  it('renders N/A for non-finite input', () => {
+    expect(formatCost(Number.NaN)).toBe(NOT_AVAILABLE);
   });
 });

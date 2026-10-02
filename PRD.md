@@ -445,35 +445,33 @@ describe('CalculateCurrentKWh', () => {
 });
 ```
 
-**Charge estimator tests (Phase 3):**
+**Charge estimator tests (Phase 2):**
 
 ```typescript
 // src/domain/use-cases/__tests__/ChargeEstimator.test.ts
 import { estimateChargeNeeded } from '../ChargeEstimator';
 
 describe('ChargeEstimator', () => {
-  it('should calculate charge needed to reach charger', () => {
+  it('should calculate charge needed at the charger', () => {
     const result = estimateChargeNeeded({
       currentBattery: 20,
-      distanceToCharger: 10,
-      efficiency: 17,
-      capacity: 82,
-      targetBuffer: 5
+      totalCapacity: 82,
+      distance: 10,
+      efficiency: 17
     });
-    expect(result.chargeToPercentage).toBe(32); // charge from 20% to 32%
-    expect(result.batteryAtCharger).toBe(5);
+    expect(result.leftPercent).toBe(18);   // 14.7 kWh on arrival
+    expect(result.kWhToCharge).toBe(67.3); // from 18% to 100%
   });
 
   it('should detect unreachable charger', () => {
     const result = estimateChargeNeeded({
       currentBattery: 10,
-      distanceToCharger: 500,
-      efficiency: 17,
-      capacity: 82,
-      targetBuffer: 5
+      totalCapacity: 82,
+      distance: 500,
+      efficiency: 17
     });
     expect(result.isReachable).toBe(false);
-    expect(result.message).toContain('Too far away');
+    expect(result.kWhToCharge).toBeNull(); // UI renders "⚠️ Too far away"
   });
 });
 ```
@@ -568,16 +566,13 @@ describe('BatteryCalculator', () => {
 - ✅ Mobile-optimized UI
 - ✅ Car management (add, edit, delete)
 
-### Phase 2 (Post-MVP)
-- [ ] Multi-language support (i18n)
-- [ ] Dark mode
-
-### Phase 3 (Advanced)
-- [ ] **Charge estimator:** Calculate charge needed AT charger location
+### Phase 2 (Advanced)
+- [x] **Charge estimator:** Calculate charge needed AT charger location
   - **Scenario:** You're on the road with current battery %, charger is X km away. Calculate how much to charge AT that charger.
   - **Inputs:**
     - Distance to charger (km)
     - Current battery % (where you are now)
+    - Efficiency (kWh/100km) — pre-filled from the calculator, editable for this trip (e.g. highway vs city)
   - **Calculation:**
     ```
     kWh_used_for_trip = (distance_km / 100) × efficiency
@@ -600,12 +595,40 @@ describe('BatteryCalculator', () => {
     - Used: 1.7 kWh → 14.7 kWh left (18% at charger)
     - Output: "You must charge 67.3 kWh (from 18% to 100%)"
 
-- [ ] **Price calculator:** User inputs electricity rate (€/kWh) → calculates charge cost
+- [x] **Battery estimator:** Estimate battery left on arrival at a target (e.g. a charger)
+  - **Scenario:** You're on the road and want to know how much battery you'll have when you reach a destination X km away.
+  - **Inputs:**
+    - Distance to target (km)
+    - Current battery % (where you are now)
+    - Efficiency (kWh/100km) — pre-filled from the calculator, editable for this trip (e.g. highway vs city)
+  - **Calculation:**
+    ```
+    kWh_used_for_trip = (distance_km / 100) × efficiency
+    current_kWh = (current_battery_% / 100) × capacity
+    kWh_left = current_kWh - kWh_used_for_trip
+    battery_left_% = (kWh_left / capacity) × 100
+
+    if kWh_left < 0:
+      output = "⚠️ Too far away"
+    else:
+      output = "{kWh_left} kWh left ({battery_left_%}%)"
+    ```
+  - **Outputs:**
+    - "X kWh left (Y%)"
+    - "⚠️ Too far away"
+  - **Example:**
+    - Current: 80% (65.6 kWh on 82 kWh)
+    - Distance: 50 km
+    - Efficiency: 17 kWh/100km
+    - Used: 8.5 kWh → Output: "57.1 kWh left (70%)"
+  - **Note:** shares the arrival calculation with the charge estimator — implement once in the domain layer and reuse.
+
+- [x] **Price calculator:** User inputs electricity rate (€/kWh) → calculates charge cost
   - Input: rate per kWh, target kWh to charge
   - Calculation: neededKWh × ratePerKWh
   - Output: "Charging to target: €X.XX"
 
-- [ ] **Unit conversion:** switch distance display between kilometres and miles
+- [x] **Unit conversion:** switch distance display between kilometres and miles
   - **Toggle:** `km ⇄ mi`, persisted with the calculator state (default `km`)
   - **Scope:** the efficiency input unit flips with it — `kWh/100km` ↔ `kWh/100mi` — so the input and the range output never disagree. Validation bounds convert with it (5–30 kWh/100km → 8.0–48.3 kWh/100mi), as do the preset chips.
   - **Conversion:** `1 mi = 1.609344 km`; range is rounded whole in the target unit.
@@ -614,8 +637,12 @@ describe('BatteryCalculator', () => {
     mi = km / 1.609344
     km = mi × 1.609344
     ```
-  - **Example:** 169 km → 105 mi; efficiency 17 kWh/100km → 10.6 kWh/100mi
+  - **Example:** 169 km → 105 mi; efficiency 17 kWh/100km → 27.4 kWh/100mi (a mile is longer, so consumption per 100 mi is higher)
   - **Note:** battery capacity stays in kWh — it is energy, not distance, so no conversion applies.
+
+### Phase 3 (Post-MVP)
+- [ ] Multi-language support (i18n)
+- [ ] Dark mode
 
 ---
 

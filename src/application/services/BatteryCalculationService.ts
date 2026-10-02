@@ -9,13 +9,15 @@ import {
 import { calculateCurrentKWh } from '../../domain/use-cases/CalculateCurrentKWh';
 import { calculateNeededKWh } from '../../domain/use-cases/CalculateNeededKWh';
 import { calculateRangeToMinimum } from '../../domain/use-cases/CalculateRange';
+import { estimateChargeNeeded } from '../../domain/use-cases/ChargeEstimator';
+import { calculateChargeCost } from '../../domain/use-cases/CalculateChargeCost';
 import { buildCalculationLabels, type CalculationResult } from '../dto/CalculationResult';
 
 /**
  * Orchestrates the domain use cases into the single result the UI renders.
  *
  * This layer owns no arithmetic of its own beyond the derived aggregates that
- * no individual use case expresses (`usableKWh`, `fullRangeKm`); every primary
+ * no individual use case expresses (`usableKWh`, `fullRange`); every primary
  * figure comes straight from a pure domain function.
  */
 export class BatteryCalculationService {
@@ -40,7 +42,7 @@ export class BatteryCalculationService {
       totalCapacity: capacity,
     });
 
-    const rangeKm = calculateRangeToMinimum({
+    const range = calculateRangeToMinimum({
       currentBattery: state.currentBattery,
       minBattery: state.minBattery,
       totalCapacity: capacity,
@@ -52,27 +54,38 @@ export class BatteryCalculationService {
     );
 
     const fullRangeKWh = (clampPercent(state.currentBattery) / 100) * capacity;
-    // Same unit conversion as the domain use case: efficiency is kWh per 100 km,
-    // so the quotient is a count of hundred-kilometre units.
-    const fullRangeKm =
+    // Same unit conversion as the domain use case: efficiency is kWh per 100
+    // distance units, so the quotient is a count of hundred-unit blocks.
+    const fullRange =
       efficiency === null || fullRangeKWh <= 0 ? null : round0((fullRangeKWh / efficiency) * 100);
 
-    return {
+    // The trip efficiency is an override; an empty field means "same as the
+    // calculator", which is what makes the field read as pre-filled.
+    const trip =
+      state.tripDistance === null
+        ? null
+        : estimateChargeNeeded({
+            currentBattery: state.currentBattery,
+            totalCapacity: capacity,
+            distance: state.tripDistance,
+            efficiency: sanitiseEfficiency(state.tripEfficiency) ?? efficiency,
+          });
+
+    const chargeCost = calculateChargeCost({ kWh: neededKWh, ratePerKWh: state.electricityRate });
+
+    const derived = {
       currentKWh,
       neededKWh,
-      rangeKm,
+      range,
       usableKWh,
-      fullRangeKm,
+      fullRange,
       rangeFromPercent: clampPercent(state.minBattery),
-      labels: buildCalculationLabels({
-        currentKWh,
-        neededKWh,
-        rangeKm,
-        usableKWh,
-        fullRangeKm,
-        rangeFromPercent: clampPercent(state.minBattery),
-      }),
+      distanceUnit: state.distanceUnit,
+      trip,
+      chargeCost,
     };
+
+    return { ...derived, labels: buildCalculationLabels(derived) };
   }
 }
 

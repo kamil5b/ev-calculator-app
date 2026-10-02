@@ -6,11 +6,43 @@
  * site without code changes.
  */
 
-/** Public origin, e.g. `https://redikru.github.io`. */
-export const SITE_URL: string = process.env.SITE_URL ?? 'https://redikru.github.io';
+/**
+ * Reads a build-time variable, treating "unset" and "empty" as the same thing.
+ *
+ * GitHub Actions substitutes `${{ vars.SITE_URL }}` with an empty string when
+ * the repository variable has never been created, and `'' ?? fallback` would
+ * happily keep that empty string — Astro then rejects `site: ''` with a bare
+ * "Invalid URL". Trimming also catches a stray space in the Actions UI.
+ */
+function envOr(name: string, fallback: string): string {
+  const value = process.env[name]?.trim();
+  return value === undefined || value === '' ? fallback : value;
+}
 
-/** Path the app is served from. Must start and (optionally) end with a slash. */
-export const BASE_PATH: string = process.env.BASE_PATH ?? '/ev-calculator-app';
+/** Public origin, e.g. `https://kamil5b.github.io`. */
+export const SITE_URL: string = envOr('SITE_URL', 'https://kamil5b.github.io');
+
+/**
+ * Path the app is served from, normalised for Astro's `base`: always exactly one
+ * leading slash and never a trailing one (except the root itself, `'/'`).
+ *
+ * Keeps `BASE_PATH` free of `//` in the generated URLs whether it arrives from
+ * the environment as `ev-calculator-app`, `/ev-calculator-app/` or `/`.
+ */
+export const BASE_PATH: string = (() => {
+  const raw = envOr('BASE_PATH', '/ev-calculator-app');
+  const withLeading = raw.startsWith('/') ? raw : `/${raw}`;
+  const withoutTrailing = withLeading.replace(/\/+$/, '');
+  return withoutTrailing === '' ? '/' : withoutTrailing;
+})();
+
+/**
+ * {@link BASE_PATH} minus its trailing slash, for joining into URLs.
+ *
+ * `''` at the root, `'/ev-calculator-app'` elsewhere — so `${BASE_PREFIX}/x`
+ * yields `/x` or `/ev-calculator-app/x`, never `//x`.
+ */
+const BASE_PREFIX = BASE_PATH.replace(/\/+$/, '');
 
 /** localStorage key holding the serialised calculator state (PRD 2.3). */
 export const STORAGE_KEY = 'ev_calculator_state';
@@ -32,8 +64,8 @@ export const PWA_MANIFEST = {
   name: 'EV Battery Calculator',
   short_name: 'EV Calc',
   description: 'Calculate EV battery metrics offline',
-  start_url: `${BASE_PATH}/`,
-  scope: `${BASE_PATH}/`,
+  start_url: `${BASE_PREFIX}/`,
+  scope: `${BASE_PREFIX}/`,
   display: 'standalone',
   orientation: 'portrait-primary',
   theme_color: THEME_COLOR,
@@ -41,19 +73,19 @@ export const PWA_MANIFEST = {
   categories: ['utilities', 'productivity'],
   icons: [
     {
-      src: `${BASE_PATH}/icons/icon-192.png`,
+      src: `${BASE_PREFIX}/icons/icon-192.png`,
       sizes: '192x192',
       type: 'image/png',
       purpose: 'any',
     },
     {
-      src: `${BASE_PATH}/icons/icon-512.png`,
+      src: `${BASE_PREFIX}/icons/icon-512.png`,
       sizes: '512x512',
       type: 'image/png',
       purpose: 'any',
     },
     {
-      src: `${BASE_PATH}/icons/icon-maskable-512.png`,
+      src: `${BASE_PREFIX}/icons/icon-maskable-512.png`,
       sizes: '512x512',
       type: 'image/png',
       purpose: 'maskable',
@@ -62,6 +94,6 @@ export const PWA_MANIFEST = {
 } as const;
 
 /** Apple touch icon + favicon, referenced from the document head. */
-export const APPLE_TOUCH_ICON = `${BASE_PATH}/icons/apple-touch-icon.png`;
+export const APPLE_TOUCH_ICON = `${BASE_PREFIX}/icons/apple-touch-icon.png`;
 
-export const FAVICON = `${BASE_PATH}/favicon.svg`;
+export const FAVICON = `${BASE_PREFIX}/favicon.svg`;

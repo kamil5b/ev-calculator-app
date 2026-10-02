@@ -123,7 +123,7 @@ Read from the environment at build time (see `src/infrastructure/config/site.ts`
 
 | Variable    | Default                     | Meaning                                |
 | ----------- | --------------------------- | -------------------------------------- |
-| `SITE_URL`  | `https://redikru.github.io` | Public origin, used for canonical URLs |
+| `SITE_URL`  | `https://kamil5b.github.io` | Public origin, used for canonical URLs |
 | `BASE_PATH` | `/ev-calculator-app`        | Sub-path the app is served from        |
 
 ```bash

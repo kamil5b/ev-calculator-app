@@ -18,7 +18,10 @@ export type BatteryField =
   | 'minBattery'
   | 'efficiency'
   | 'tripDistance'
-  | 'electricityRate';
+  | 'electricityRate'
+  | 'roadInitial'
+  | `roadLeg${number}`
+  | `roadChargeTo${number}`;
 
 /**
  * Validates the raw form values before they are folded into the state.
@@ -49,6 +52,37 @@ export function validateBatteryInputs(inputs: BatteryState): FieldError[] {
   errors.push(
     ...validateNonNegative('electricityRate', inputs.electricityRate, VALIDATION_MESSAGES.rateNegative),
   );
+
+  errors.push(...validateRoadPlan(inputs));
+
+  return errors;
+}
+
+/**
+ * Road planner rules (PRD 11): the initial % is a normal percentage, every
+ * filled leg is a non-negative distance and a charging stop may only target a
+ * valid percentage. Empty legs are `null` and pass — "not filled in yet" is a
+ * legitimate intermediate state, not an error.
+ */
+function validateRoadPlan(inputs: BatteryState): FieldError[] {
+  const errors: FieldError[] = [];
+  const plan = inputs.roadPlan;
+
+  errors.push(...validatePercent('roadInitial', plan.initialPercent));
+
+  plan.legs.forEach((leg, index) => {
+    if (leg === null) return;
+    if (!Number.isFinite(leg)) {
+      errors.push({ field: `roadLeg${index}`, message: VALIDATION_MESSAGES.notANumber });
+    } else if (leg < 0) {
+      errors.push({ field: `roadLeg${index}`, message: VALIDATION_MESSAGES.distanceNegative });
+    }
+  });
+
+  plan.stops.forEach((stop, index) => {
+    if (!stop.charging) return;
+    errors.push(...validatePercent(`roadChargeTo${index}`, stop.chargeTo));
+  });
 
   return errors;
 }

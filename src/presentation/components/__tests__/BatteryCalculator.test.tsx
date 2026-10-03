@@ -180,4 +180,66 @@ describe('BatteryCalculator', () => {
       expect(screen.getByRole('button', { name: 'mi' })).toHaveAttribute('aria-pressed', 'true');
     });
   });
+
+  describe('Road planner', () => {
+    it('renders the start point, the end point and the add-stop control', () => {
+      renderCalculator();
+      expect(screen.getByText('Road planner')).toBeInTheDocument();
+      expect(screen.getByText('Start')).toBeInTheDocument();
+      expect(screen.getByText('End')).toBeInTheDocument();
+      expect(screen.getByLabelText(/^initial battery/i)).toHaveValue(80);
+      expect(screen.getByRole('button', { name: /add stop/i })).toBeInTheDocument();
+    });
+
+    it('computes the arrival and totals from the typed distance', () => {
+      renderCalculator();
+      fireEvent.change(screen.getByLabelText(/distance from start/i), { target: { value: '100' } });
+
+      // 100 km × 17 kWh/100km = 17 kWh of 75 kWh → 22.7 % used → 57 %.
+      expect(screen.getByText('57%')).toBeInTheDocument();
+      expect(screen.getByText('100 km · 17 kWh used')).toBeInTheDocument();
+    });
+
+    it('adds and removes stops', () => {
+      renderCalculator();
+      fireEvent.click(screen.getByRole('button', { name: /add stop/i }));
+      expect(screen.getByText('Stop 1')).toBeInTheDocument();
+      expect(screen.getByLabelText(/distance from stop 1/i)).toBeInTheDocument();
+
+      fireEvent.click(screen.getByRole('button', { name: /remove stop 1/i }));
+      expect(screen.queryByText('Stop 1')).not.toBeInTheDocument();
+    });
+
+    it('reveals the charge controls and prices the session', () => {
+      renderCalculator();
+      // Charging is a waypoint-only option: the end point never shows it.
+      fireEvent.click(screen.getByRole('button', { name: /add stop/i }));
+      fireEvent.change(screen.getByLabelText(/electricity price/i), { target: { value: '0.4' } });
+      fireEvent.change(screen.getByLabelText(/distance from start/i), { target: { value: '100' } });
+      fireEvent.change(screen.getByLabelText(/charge here/i), { target: { checked: true } });
+
+      expect(screen.getByRole('slider', { name: /charge to/i })).toBeInTheDocument();
+      // Arrival 57.3 % → 100 % = 42.7 % of 75 kWh = 32 kWh × €0.40 = €12.80.
+      expect(screen.getByText('32 kWh · €12.80')).toBeInTheDocument();
+    });
+
+    it('warns when a leg is too far to drive', () => {
+      renderCalculator();
+      fireEvent.change(screen.getByLabelText(/distance from start/i), { target: { value: '10000' } });
+      expect(screen.getAllByText('⚠️ Too far away').length).toBeGreaterThan(0);
+    });
+
+    it('shows an inline error for a negative distance', () => {
+      renderCalculator();
+      fireEvent.change(screen.getByLabelText(/distance from start/i), { target: { value: '-5' } });
+      expect(screen.getByText('Distance cannot be negative')).toBeInTheDocument();
+    });
+
+    it('converts road distances with the unit toggle', () => {
+      renderCalculator();
+      fireEvent.change(screen.getByLabelText(/distance from start/i), { target: { value: '100' } });
+      fireEvent.click(screen.getByRole('button', { name: 'mi' }));
+      expect(screen.getByLabelText(/distance from start/i)).toHaveValue(62.14);
+    });
+  });
 });

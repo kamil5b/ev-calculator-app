@@ -17,13 +17,19 @@ export function switchDistanceUnit(state: BatteryState, unit: DistanceUnit): Bat
   const efficiency = (value: number | null) =>
     value === null || !Number.isFinite(value) ? value : convertEfficiency(value, from, unit);
 
+  const distance = (value: number | null) =>
+    value === null || !Number.isFinite(value) ? value : convertDistance(value, from, unit);
+
   return {
     ...state,
     distanceUnit: unit,
     efficiency: efficiency(state.efficiency),
-    tripDistance:
-      state.tripDistance === null || !Number.isFinite(state.tripDistance)
-        ? state.tripDistance
-        : convertDistance(state.tripDistance, from, unit),
+    tripDistance: distance(state.tripDistance),
+    // Leg distances are distance-shaped too: convert them in place, keeping
+    // empty (`null`) legs empty so a half-typed plan survives the toggle.
+    roadPlan: {
+      ...state.roadPlan,
+      legs: state.roadPlan.legs.map(distance),
+    },
   };
 }

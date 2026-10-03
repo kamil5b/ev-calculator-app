@@ -2,6 +2,7 @@ import { useCalculator } from '../hooks/useCalculator';
 import { useInstallPrompt } from '../hooks/useInstallPrompt';
 import { InputSection } from './InputSection';
 import { OutputSection } from './OutputSection';
+import { RoadPlannerSection } from './RoadPlannerSection';
 import { UnitToggle } from './UnitToggle';
 import { Button } from './common/Button';
 import { Badge } from './common/Badge';
@@ -67,6 +68,18 @@ export function BatteryCalculator({ storage }: BatteryCalculatorProps) {
         />
 
         <OutputSection state={calculator.state} result={calculator.result} />
+
+        <RoadPlannerSection
+          state={calculator.state}
+          result={calculator.roadPlanResult}
+          errorFor={calculator.errorFor}
+          onInitialPercentChange={calculator.setRoadInitialPercent}
+          onLegChange={calculator.setRoadLeg}
+          onChargeToggle={calculator.setRoadCharge}
+          onChargeToChange={calculator.setRoadChargeTo}
+          onAddStop={calculator.addRoadStop}
+          onRemoveStop={calculator.removeRoadStop}
+        />
       </main>
 
       <footer class="flex items-center justify-between gap-3">

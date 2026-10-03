@@ -1,4 +1,5 @@
 import type { DistanceUnit } from './DistanceUnit';
+import { DEFAULT_ROAD_PLAN, type RoadPlan } from './RoadPlan';
 
 /**
  * Domain entity describing the aggregate persisted for the calculator.
@@ -26,6 +27,8 @@ export interface BatteryState {
   readonly tripDistance: number | null;
   /** Electricity price per kWh, or `null` when the user has not supplied one. */
   readonly electricityRate: number | null;
+  /** EV Road Planner input (PRD 11); independent of the fields above. */
+  readonly roadPlan: RoadPlan;
 }
 
 /** Subset of {@link BatteryState} required to derive current kWh. */
@@ -74,4 +77,5 @@ export const DEFAULT_BATTERY_STATE: BatteryState = {
   distanceUnit: 'km',
   tripDistance: null,
   electricityRate: null,
+  roadPlan: DEFAULT_ROAD_PLAN,
 };

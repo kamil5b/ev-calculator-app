@@ -1,5 +1,6 @@
 import type { StoragePort } from '../../infrastructure/storage/LocalStorageAdapter';
 import { DEFAULT_BATTERY_STATE, type BatteryState } from '../../domain/entities/BatteryState';
+import { DEFAULT_ROAD_PLAN, MAX_ROAD_STOPS, type RoadPlan, type RoadStop } from '../../domain/entities/RoadPlan';
 import { STORAGE_KEY } from '../../infrastructure/config/site';
 import {
   MAX_BATTERY_PERCENT,
@@ -85,6 +86,44 @@ export function normaliseBatteryState(raw: Partial<Record<keyof BatteryState, un
     distanceUnit,
     tripDistance: coerceNonNegative(raw.tripDistance),
     electricityRate: coerceNonNegative(raw.electricityRate),
+    roadPlan: coerceRoadPlan(raw.roadPlan),
+  };
+}
+
+/**
+ * Coerces an untrusted road plan into a structurally valid {@link RoadPlan}.
+ *
+ * Rules: legs and stops are length-aligned, capped at {@link MAX_ROAD_STOPS}
+ * waypoints, empty/corrupt legs become `null` (the field just reads as
+ * unfilled) and a missing or unusable payload falls back to the default plan.
+ * Charging intent survives only as a strict `true`; anything else is "off".
+ */
+export function coerceRoadPlan(raw: unknown): RoadPlan {
+  if (raw === null || typeof raw !== 'object') return { ...DEFAULT_ROAD_PLAN };
+
+  const record = raw as Record<string, unknown>;
+  const rawLegs = Array.isArray(record.legs) ? record.legs : [];
+  // +1: legs outnumber waypoints by one (start→…→end).
+  const legs = rawLegs
+    .slice(0, MAX_ROAD_STOPS + 1)
+    .map((entry) => (entry === null || entry === undefined ? null : coerceNonNegative(entry)));
+
+  if (legs.length === 0) return { ...DEFAULT_ROAD_PLAN };
+
+  const rawStops = Array.isArray(record.stops) ? record.stops : [];
+  const stops: RoadStop[] = legs.map((_, index) => {
+    const entry = rawStops[index];
+    const stop = entry !== null && typeof entry === 'object' ? (entry as Record<string, unknown>) : {};
+    return {
+      charging: stop.charging === true,
+      chargeTo: coercePercent(stop.chargeTo) ?? DEFAULT_ROAD_PLAN.stops[0]?.chargeTo ?? 100,
+    };
+  });
+
+  return {
+    initialPercent: coercePercent(record.initialPercent) ?? DEFAULT_ROAD_PLAN.initialPercent,
+    legs,
+    stops,
   };
 }
 

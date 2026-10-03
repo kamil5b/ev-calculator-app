@@ -8,6 +8,7 @@ import {
   safeParse,
 } from '../PersistenceService';
 import { DEFAULT_BATTERY_STATE } from '../../../domain/entities/BatteryState';
+import { DEFAULT_ROAD_PLAN, MAX_ROAD_STOPS } from '../../../domain/entities/RoadPlan';
 import { MemoryStorageAdapter, type StoragePort } from '../../../infrastructure/storage/LocalStorageAdapter';
 
 const KEY = 'ev_calculator_state';
@@ -37,6 +38,14 @@ describe('PersistenceService', () => {
         distanceUnit: 'mi' as const,
         tripDistance: 31.1,
         electricityRate: 0.35,
+        roadPlan: {
+          initialPercent: 65,
+          legs: [120.5, null],
+          stops: [
+            { charging: true, chargeTo: 90 },
+            { charging: false, chargeTo: 100 },
+          ],
+        },
       };
       expect(service.save(state)).toBe(true);
       expect(service.load()).toEqual(state);
@@ -243,5 +252,82 @@ describe('PersistenceService Phase 2 fields', () => {
     const loaded = service.load();
     expect(loaded.tripDistance).toBeNull();
     expect(loaded.electricityRate).toBeNull();
+  });
+});
+
+describe('PersistenceService road planner fields', () => {
+  let storage: MemoryStorageAdapter;
+  let service: PersistenceService;
+
+  beforeEach(() => {
+    storage = new MemoryStorageAdapter();
+    service = new PersistenceService(storage, KEY);
+  });
+
+  it('falls back to the default plan when an older build wrote the payload', () => {
+    storage.setItem(KEY, JSON.stringify({ totalCapacity: 82 }));
+    expect(service.load().roadPlan).toEqual(DEFAULT_ROAD_PLAN);
+  });
+
+  it('keeps a stored plan intact', () => {
+    storage.setItem(
+      KEY,
+      JSON.stringify({
+        roadPlan: {
+          initialPercent: 65,
+          legs: [120.5, null],
+          stops: [
+            { charging: true, chargeTo: 90 },
+            { charging: false, chargeTo: 100 },
+          ],
+        },
+      }),
+    );
+    expect(service.load().roadPlan).toEqual({
+      initialPercent: 65,
+      legs: [120.5, null],
+      stops: [
+        { charging: true, chargeTo: 90 },
+        { charging: false, chargeTo: 100 },
+      ],
+    });
+  });
+
+  it('repairs a corrupt plan: empty legs, aligned stops, no charging surprises', () => {
+    storage.setItem(
+      KEY,
+      JSON.stringify({
+        roadPlan: {
+          initialPercent: 400,
+          legs: [-10, 'oops', 50],
+          stops: [{ charging: 'yes', chargeTo: -5 }],
+        },
+      }),
+    );
+    expect(service.load().roadPlan).toEqual({
+      initialPercent: 80,
+      legs: [null, null, 50],
+      stops: [
+        { charging: false, chargeTo: 100 },
+        { charging: false, chargeTo: 100 },
+        { charging: false, chargeTo: 100 },
+      ],
+    });
+  });
+
+  it('caps the plan at 10 waypoints', () => {
+    storage.setItem(
+      KEY,
+      JSON.stringify({
+        roadPlan: {
+          initialPercent: 50,
+          legs: Array.from({ length: 30 }, (_, index) => index + 1),
+          stops: [],
+        },
+      }),
+    );
+    const plan = service.load().roadPlan;
+    expect(plan.legs).toHaveLength(MAX_ROAD_STOPS + 1);
+    expect(plan.stops).toHaveLength(MAX_ROAD_STOPS + 1);
   });
 });

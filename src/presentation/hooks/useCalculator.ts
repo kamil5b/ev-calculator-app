@@ -10,6 +10,9 @@ import type { FieldError } from '../../domain/entities/validation';
 import { clampPercent } from '../../domain/use-cases/math';
 import { switchDistanceUnit } from '../../domain/use-cases/SwitchDistanceUnit';
 import type { DistanceUnit } from '../../domain/entities/DistanceUnit';
+import { MAX_ROAD_STOPS, type RoadPlan } from '../../domain/entities/RoadPlan';
+import { roadPlannerService } from '../../application/services/RoadPlannerService';
+import type { RoadPlanResult } from '../../application/dto/RoadPlanResult';
 
 /** What {@link useCalculator} hands to the components. */
 export interface UseCalculator {
@@ -20,6 +23,8 @@ export interface UseCalculator {
   readonly activeCar: CarModel | null;
   readonly storageAvailable: boolean;
   readonly hydrated: boolean;
+  /** Derived road planner output, recomputed on every render like `result`. */
+  readonly roadPlanResult: RoadPlanResult;
   setCapacity: (value: number) => void;
   setCurrentBattery: (value: number) => void;
   setTargetBattery: (value: number) => void;
@@ -28,6 +33,12 @@ export interface UseCalculator {
   setDistanceUnit: (unit: DistanceUnit) => void;
   setTripDistance: (value: number | null) => void;
   setElectricityRate: (value: number | null) => void;
+  setRoadInitialPercent: (value: number) => void;
+  setRoadLeg: (index: number, value: number | null) => void;
+  setRoadCharge: (index: number, charging: boolean) => void;
+  setRoadChargeTo: (index: number, value: number) => void;
+  addRoadStop: () => void;
+  removeRoadStop: (index: number) => void;
   selectCar: (id: string | null) => void;
   addCar: (draft: { model: string; name?: string; capacity: number }) => boolean;
   updateCar: (id: string, draft: { model: string; name?: string; capacity: number }) => boolean;
@@ -130,6 +141,86 @@ export function useCalculator(storage?: StoragePort): UseCalculator {
     [patch],
   );
 
+  // Road planner (PRD 11): every action rewrites only its own slice of the
+  // plan; legs and stops stay index-aligned by construction.
+  const setRoadInitialPercent = useCallback(
+    (value: number) =>
+      setState((previous) => ({
+        ...previous,
+        roadPlan: { ...previous.roadPlan, initialPercent: value },
+      })),
+    [],
+  );
+
+  const setRoadLeg = useCallback((index: number, value: number | null) => {
+    setState((previous) => ({
+      ...previous,
+      roadPlan: {
+        ...previous.roadPlan,
+        legs: previous.roadPlan.legs.map((leg, legIndex) => (legIndex === index ? value : leg)),
+      },
+    }));
+  }, []);
+
+  const patchRoadStop = useCallback((index: number, changes: Partial<RoadPlan['stops'][number]>) => {
+    setState((previous) => ({
+      ...previous,
+      roadPlan: {
+        ...previous.roadPlan,
+        stops: previous.roadPlan.stops.map((stop, stopIndex) =>
+          stopIndex === index ? { ...stop, ...changes } : stop,
+        ),
+      },
+    }));
+  }, []);
+
+  const setRoadCharge = useCallback(
+    (index: number, charging: boolean) => patchRoadStop(index, { charging }),
+    [patchRoadStop],
+  );
+
+  const setRoadChargeTo = useCallback(
+    (index: number, value: number) => patchRoadStop(index, { chargeTo: value }),
+    [patchRoadStop],
+  );
+
+  /** Inserts a waypoint immediately before the end point. */
+  const addRoadStop = useCallback(() => {
+    setState((previous) => {
+      const plan = previous.roadPlan;
+      if (plan.legs.length - 1 >= MAX_ROAD_STOPS) return previous;
+      const insertAt = Math.max(0, plan.legs.length - 1);
+      return {
+        ...previous,
+        roadPlan: {
+          ...plan,
+          legs: [...plan.legs.slice(0, insertAt), null, ...plan.legs.slice(insertAt)],
+          stops: [
+            ...plan.stops.slice(0, insertAt),
+            { charging: false, chargeTo: 100 },
+            ...plan.stops.slice(insertAt),
+          ],
+        },
+      };
+    });
+  }, []);
+
+  /** Removes waypoint `index` (its leg index); the start/end are untouchable. */
+  const removeRoadStop = useCallback((index: number) => {
+    setState((previous) => {
+      const plan = previous.roadPlan;
+      if (plan.legs.length <= 1) return previous;
+      return {
+        ...previous,
+        roadPlan: {
+          ...plan,
+          legs: plan.legs.filter((_, legIndex) => legIndex !== index),
+          stops: plan.stops.filter((_, stopIndex) => stopIndex !== index),
+        },
+      };
+    });
+  }, []);
+
   const selectCar = useCallback(
     (id: string | null) => {
       carsService.setActiveId(id);
@@ -191,6 +282,7 @@ export function useCalculator(storage?: StoragePort): UseCalculator {
   }, [carsService, persistence]);
 
   const result = batteryCalculationService.calculate(state);
+  const roadPlanResult = roadPlannerService.estimate(state);
   const errors = validateBatteryInputs(state);
 
   const errorFor = useCallback(
@@ -206,6 +298,7 @@ export function useCalculator(storage?: StoragePort): UseCalculator {
     activeCar: cars.find((car) => car.id === state.carId) ?? null,
     storageAvailable,
     hydrated,
+    roadPlanResult,
     setCapacity,
     setCurrentBattery,
     setTargetBattery,
@@ -214,6 +307,12 @@ export function useCalculator(storage?: StoragePort): UseCalculator {
     setDistanceUnit,
     setTripDistance,
     setElectricityRate,
+    setRoadInitialPercent,
+    setRoadLeg,
+    setRoadCharge,
+    setRoadChargeTo,
+    addRoadStop,
+    removeRoadStop,
     selectCar,
     addCar,
     updateCar,

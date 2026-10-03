@@ -84,4 +84,18 @@ describe('RoadTripService', () => {
       });
     });
   });
+
+  describe('remove', () => {
+    it('deletes a saved trip', () => {
+      const saved = service.add({ name: 'Weekend', plan, distanceUnit: 'km' });
+      if (!saved.ok) throw new Error('expected save to succeed');
+
+      expect(service.remove(saved.trip.id)).toBe(true);
+      expect(service.list()).toEqual([]);
+    });
+
+    it('returns false for an unknown id', () => {
+      expect(service.remove('trip-missing')).toBe(false);
+    });
+  });
 });

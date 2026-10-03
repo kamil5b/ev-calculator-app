@@ -56,4 +56,9 @@ export class RoadTripService {
 
     return { ok: true, trip: this.repository.update(id, merged) as RoadTrip };
   }
+
+  /** Deletes a stored trip. Returns `false` when there was nothing to delete. */
+  remove(id: string): boolean {
+    return this.repository.remove(id);
+  }
 }

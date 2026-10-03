@@ -105,6 +105,19 @@ describe('RoadTripRepository', () => {
       expect(repository.getById(trip.id)).not.toBeNull();
     });
   });
+
+  describe('remove', () => {
+    it('deletes the record', () => {
+      const trip = repository.add(draft);
+      expect(repository.remove(trip.id)).toBe(true);
+      expect(repository.getAll()).toEqual([]);
+      expect(repository.getById(trip.id)).toBeNull();
+    });
+
+    it('returns false for an unknown id', () => {
+      expect(repository.remove('trip-missing')).toBe(false);
+    });
+  });
 });
 
 describe('generateTripId', () => {

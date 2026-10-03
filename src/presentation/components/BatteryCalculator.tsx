@@ -3,7 +3,6 @@ import { useInstallPrompt } from '../hooks/useInstallPrompt';
 import { InputSection } from './InputSection';
 import { OutputSection } from './OutputSection';
 import { RoadPlannerSection } from './RoadPlannerSection';
-import { SavedTripsSection } from './SavedTripsSection';
 import { UnitToggle } from './UnitToggle';
 import { Button } from './common/Button';
 import { Badge } from './common/Badge';
@@ -74,6 +73,7 @@ export function BatteryCalculator({ storage }: BatteryCalculatorProps) {
           state={calculator.state}
           result={calculator.roadPlanResult}
           errorFor={calculator.errorFor}
+          trips={calculator.savedTrips}
           onInitialPercentChange={calculator.setRoadInitialPercent}
           onLegChange={calculator.setRoadLeg}
           onChargeToggle={calculator.setRoadCharge}
@@ -81,13 +81,11 @@ export function BatteryCalculator({ storage }: BatteryCalculatorProps) {
           onPointNameChange={calculator.setRoadPointName}
           onAddStop={calculator.addRoadStop}
           onRemoveStop={calculator.removeRoadStop}
-        />
-
-        <SavedTripsSection
-          trips={calculator.savedTrips}
-          onSave={calculator.saveRoadTrip}
-          onLoad={calculator.loadRoadTrip}
-          onUpdate={calculator.updateRoadTrip}
+          onSaveTrip={calculator.saveRoadTrip}
+          onLoadTrip={calculator.loadRoadTrip}
+          onUpdateTrip={calculator.updateRoadTrip}
+          onRemoveTrip={calculator.removeRoadTrip}
+          onReset={calculator.resetRoadPlan}
         />
       </main>
 

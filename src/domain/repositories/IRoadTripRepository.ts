@@ -18,4 +18,7 @@ export interface IRoadTripRepository {
 
   /** Applies a partial edit. Returns the updated trip, or `null` if unknown. */
   update(id: string, changes: Partial<Omit<RoadTrip, 'id' | 'createdAt'>>): RoadTrip | null;
+
+  /** Removes a trip. Returns `true` when a record was actually deleted. */
+  remove(id: string): boolean;
 }

@@ -60,6 +60,15 @@ export class RoadTripRepository implements IRoadTripRepository {
     return updated;
   }
 
+  remove(id: string): boolean {
+    const trips = this.readAll();
+    const remaining = trips.filter((trip) => trip.id !== id);
+    if (remaining.length === trips.length) return false;
+
+    this.writeAll(remaining);
+    return true;
+  }
+
   private readAll(): RoadTrip[] {
     const raw = this.storage.getItem(this.tripsKey);
     if (raw === null) return [];

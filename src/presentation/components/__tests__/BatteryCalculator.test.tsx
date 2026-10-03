@@ -313,5 +313,35 @@ describe('BatteryCalculator', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Load Commute' }));
       expect(screen.getByLabelText(/distance from start/i)).toHaveValue(50);
     });
+
+    it('deletes a saved trip after an inline confirmation', () => {
+      renderCalculator();
+
+      fireEvent.change(screen.getByLabelText('Trip name'), { target: { value: 'Trash' } });
+      fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+      expect(screen.getByText('Trash')).toBeInTheDocument();
+
+      fireEvent.click(screen.getByRole('button', { name: 'Delete Trash' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Confirm delete Trash' }));
+
+      expect(screen.queryByText('Trash')).not.toBeInTheDocument();
+      expect(screen.getByText('No saved trips yet')).toBeInTheDocument();
+    });
+
+    it('resets the planner without touching saved trips', () => {
+      renderCalculator();
+
+      fireEvent.change(screen.getByLabelText(/^initial battery/i), { target: { value: '60' } });
+      fireEvent.change(screen.getByLabelText(/distance from start/i), { target: { value: '100' } });
+      fireEvent.change(screen.getByLabelText('Trip name'), { target: { value: 'Keeper' } });
+      fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+      fireEvent.click(screen.getByRole('button', { name: 'Reset road planner' }));
+
+      expect(screen.getByLabelText(/^initial battery/i)).toHaveValue(80);
+      expect(screen.getByLabelText(/distance from start/i)).toHaveValue(null);
+      // Saved trips survive the reset.
+      expect(screen.getByText('Keeper')).toBeInTheDocument();
+    });
   });
 });

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'preact/hooks';
 import { createContainer, type Container } from '../../infrastructure/compositionRoot';
 import type { StoragePort } from '../../infrastructure/storage/LocalStorageAdapter';
 import { DEFAULT_BATTERY_STATE, type BatteryState } from '../../domain/entities/BatteryState';
+import { DEFAULT_ROAD_PLAN } from '../../domain/entities/RoadPlan';
 import type { CarModel } from '../../domain/entities/CarModel';
 import type { CalculationResult } from '../../application/dto/CalculationResult';
 import { batteryCalculationService } from '../../application/services/BatteryCalculationService';
@@ -47,6 +48,8 @@ export interface UseCalculator {
   saveRoadTrip: (name: string) => boolean;
   loadRoadTrip: (id: string) => void;
   updateRoadTrip: (id: string) => boolean;
+  removeRoadTrip: (id: string) => boolean;
+  resetRoadPlan: () => void;
   selectCar: (id: string | null) => void;
   addCar: (draft: { model: string; name?: string; capacity: number }) => boolean;
   updateCar: (id: string, draft: { model: string; name?: string; capacity: number }) => boolean;
@@ -304,6 +307,29 @@ export function useCalculator(storage?: StoragePort): UseCalculator {
     [tripsService, state.roadPlan, state.distanceUnit],
   );
 
+  /** Deletes a saved trip from the library. */
+  const removeRoadTrip = useCallback(
+    (id: string): boolean => {
+      if (!tripsService.remove(id)) return false;
+      setSavedTrips(tripsService.list());
+      return true;
+    },
+    [tripsService],
+  );
+
+  /** Restores the planner to the first-run plan; saved trips are untouched. */
+  const resetRoadPlan = useCallback(() => {
+    setState((previous) => ({
+      ...previous,
+      roadPlan: {
+        ...DEFAULT_ROAD_PLAN,
+        legs: [...DEFAULT_ROAD_PLAN.legs],
+        stops: DEFAULT_ROAD_PLAN.stops.map((stop) => ({ ...stop })),
+        names: [...DEFAULT_ROAD_PLAN.names],
+      },
+    }));
+  }, []);
+
   const selectCar = useCallback(
     (id: string | null) => {
       carsService.setActiveId(id);
@@ -401,6 +427,8 @@ export function useCalculator(storage?: StoragePort): UseCalculator {
     saveRoadTrip,
     loadRoadTrip,
     updateRoadTrip,
+    removeRoadTrip,
+    resetRoadPlan,
     selectCar,
     addCar,
     updateCar,

@@ -26,11 +26,18 @@ function renderSection(options: Partial<SavedTripsSectionProps> = {}) {
   const onSave = options.onSave ?? vi.fn<SavedTripsSectionProps['onSave']>(() => true);
   const onLoad = options.onLoad ?? vi.fn<SavedTripsSectionProps['onLoad']>();
   const onUpdate = options.onUpdate ?? vi.fn<SavedTripsSectionProps['onUpdate']>(() => true);
+  const onRemove = options.onRemove ?? vi.fn<SavedTripsSectionProps['onRemove']>(() => true);
 
   render(
-    <SavedTripsSection trips={options.trips ?? trips} onSave={onSave} onLoad={onLoad} onUpdate={onUpdate} />,
+    <SavedTripsSection
+      trips={options.trips ?? trips}
+      onSave={onSave}
+      onLoad={onLoad}
+      onUpdate={onUpdate}
+      onRemove={onRemove}
+    />,
   );
-  return { onSave, onLoad, onUpdate };
+  return { onSave, onLoad, onUpdate, onRemove };
 }
 
 describe('SavedTripsSection', () => {
@@ -93,5 +100,25 @@ describe('SavedTripsSection', () => {
 
     expect(onLoad).toHaveBeenCalledWith('trip-1');
     expect(onUpdate).toHaveBeenCalledWith('trip-2');
+  });
+
+  it('asks before deleting, then reports the trip id', () => {
+    const { onRemove } = renderSection();
+    fireEvent.click(screen.getByRole('button', { name: 'Delete Weekend trip' }));
+
+    expect(screen.getByText('Delete Weekend trip?')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm delete Weekend trip' }));
+
+    expect(onRemove).toHaveBeenCalledWith('trip-1');
+  });
+
+  it('cancels a pending delete with No', () => {
+    const { onRemove } = renderSection();
+    fireEvent.click(screen.getByRole('button', { name: 'Delete Weekend trip' }));
+    fireEvent.click(screen.getByRole('button', { name: 'No' }));
+
+    expect(screen.queryByText('Delete Weekend trip?')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Delete Weekend trip' })).toBeInTheDocument();
+    expect(onRemove).not.toHaveBeenCalled();
   });
 });

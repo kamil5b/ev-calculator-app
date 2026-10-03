@@ -1,5 +1,6 @@
 import type { BatteryState } from '../../domain/entities/BatteryState';
 import type { RoadPlanResult } from '../../application/dto/RoadPlanResult';
+import type { RoadTrip } from '../../domain/entities/RoadTrip';
 import {
   MAX_POINT_NAME_LENGTH,
   MAX_ROAD_STOPS,
@@ -10,12 +11,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './com
 import { fromFieldValue, Input, toFieldValue } from './common/Input';
 import { Slider } from './common/Slider';
 import { Button } from './common/Button';
+import { SavedTripsSection } from './SavedTripsSection';
 import { cn } from '../../lib/utils';
 
 export type RoadPlannerSectionProps = {
   state: BatteryState;
   result: RoadPlanResult;
   errorFor: (field: string) => string | undefined;
+  /** Saved trips shown at the head of the card, newest first. */
+  trips: RoadTrip[];
   onInitialPercentChange: (value: number) => void;
   onLegChange: (index: number, value: number | null) => void;
   onChargeToggle: (index: number, charging: boolean) => void;
@@ -23,6 +27,11 @@ export type RoadPlannerSectionProps = {
   onPointNameChange: (pointIndex: number, name: string) => void;
   onAddStop: () => void;
   onRemoveStop: (index: number) => void;
+  onSaveTrip: (name: string) => boolean;
+  onLoadTrip: (id: string) => void;
+  onUpdateTrip: (id: string) => boolean;
+  onRemoveTrip: (id: string) => boolean;
+  onReset: () => void;
 };
 
 /**
@@ -37,6 +46,7 @@ export function RoadPlannerSection({
   state,
   result,
   errorFor,
+  trips,
   onInitialPercentChange,
   onLegChange,
   onChargeToggle,
@@ -44,6 +54,11 @@ export function RoadPlannerSection({
   onPointNameChange,
   onAddStop,
   onRemoveStop,
+  onSaveTrip,
+  onLoadTrip,
+  onUpdateTrip,
+  onRemoveTrip,
+  onReset,
 }: RoadPlannerSectionProps) {
   const plan = state.roadPlan;
   const unit = state.distanceUnit;
@@ -62,6 +77,16 @@ export function RoadPlannerSection({
       </CardHeader>
 
       <CardContent>
+        <SavedTripsSection
+          trips={trips}
+          onSave={onSaveTrip}
+          onLoad={onLoadTrip}
+          onUpdate={onUpdateTrip}
+          onRemove={onRemoveTrip}
+        />
+
+        <div class="border-t border-slate-200" />
+
         {!result.available && (
           <p class="text-sm text-slate-500">Add an efficiency above to see the estimate</p>
         )}
@@ -200,14 +225,19 @@ export function RoadPlannerSection({
           </p>
         )}
 
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={waypointCount(plan) >= MAX_ROAD_STOPS}
-          onClick={onAddStop}
-        >
-          Add stop
-        </Button>
+        <div class="flex flex-wrap gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={waypointCount(plan) >= MAX_ROAD_STOPS}
+            onClick={onAddStop}
+          >
+            Add stop
+          </Button>
+          <Button variant="ghost" size="sm" aria-label="Reset road planner" onClick={onReset}>
+            Reset
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );

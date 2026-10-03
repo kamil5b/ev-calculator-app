@@ -117,9 +117,7 @@ async function precacheShell(cache) {
 
     const html = await response.text();
     const seen = new Set();
-    await Promise.all(
-      [...collectShellAssets(html)].map((url) => precacheAsset(cache, url, seen)),
-    );
+    await Promise.all([...collectShellAssets(html)].map((url) => precacheAsset(cache, url, seen)));
   } catch {
     // Offline support degrades to "works from the second visit on"; never
     // abort the installation over it.

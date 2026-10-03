@@ -71,8 +71,7 @@ export function RoadPlannerSection({
       <CardHeader>
         <CardTitle id="road-heading">Road planner</CardTitle>
         <CardDescription>
-          Start, optional stops, then the end point. Each distance is measured from the previous
-          point.
+          Start, optional stops, then the end point. Each distance is measured from the previous point.
         </CardDescription>
       </CardHeader>
 
@@ -111,9 +110,7 @@ export function RoadPlannerSection({
             value={toFieldValue(plan.initialPercent)}
             error={errorFor('roadInitial')}
             hint="Independent of the battery level above"
-            onValueChange={(value) =>
-              onInitialPercentChange(fromFieldValue(value) ?? Number.NaN)
-            }
+            onValueChange={(value) => onInitialPercentChange(fromFieldValue(value) ?? Number.NaN)}
           />
         </section>
 

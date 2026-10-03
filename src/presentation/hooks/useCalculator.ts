@@ -206,7 +206,9 @@ export function useCalculator(storage?: StoragePort): UseCalculator {
       roadPlan: {
         ...previous.roadPlan,
         names: Array.from({ length: previous.roadPlan.legs.length + 1 }, (_, index) =>
-          index === pointIndex ? name.slice(0, MAX_POINT_NAME_LENGTH) : previous.roadPlan.names[index] ?? '',
+          index === pointIndex
+            ? name.slice(0, MAX_POINT_NAME_LENGTH)
+            : (previous.roadPlan.names[index] ?? ''),
         ),
       },
     }));
@@ -230,7 +232,7 @@ export function useCalculator(storage?: StoragePort): UseCalculator {
           ],
           // The new waypoint is point `insertAt + 1`; it starts unnamed.
           names: Array.from({ length: plan.legs.length + 2 }, (_, pointIndex) =>
-            pointIndex === insertAt + 1 ? '' : plan.names[pointIndex] ?? '',
+            pointIndex === insertAt + 1 ? '' : (plan.names[pointIndex] ?? ''),
           ),
         },
       };
@@ -249,8 +251,9 @@ export function useCalculator(storage?: StoragePort): UseCalculator {
           legs: plan.legs.filter((_, legIndex) => legIndex !== index),
           stops: plan.stops.filter((_, stopIndex) => stopIndex !== index),
           // Dropping the waypoint drops point `index + 1`; the rest shift down.
-          names: Array.from({ length: plan.legs.length }, (_, pointIndex) =>
-            plan.names[pointIndex < index + 1 ? pointIndex : pointIndex + 1] ?? '',
+          names: Array.from(
+            { length: plan.legs.length },
+            (_, pointIndex) => plan.names[pointIndex < index + 1 ? pointIndex : pointIndex + 1] ?? '',
           ),
         },
       };

@@ -4,9 +4,7 @@ import type { RoadPlan } from '../../entities/RoadPlan';
 
 /** 75 kWh pack, 17 kWh/100km, €0.35/kWh, no reserve — overrides split into
  * plan fields (`initialPercent`, `legs`, `stops`) and input fields. */
-const input = (
-  overrides: Partial<RoadPlan> & Partial<Omit<RoadPlanInput, 'plan'>> = {},
-): RoadPlanInput => {
+const input = (overrides: Partial<RoadPlan> & Partial<Omit<RoadPlanInput, 'plan'>> = {}): RoadPlanInput => {
   const { initialPercent, legs, stops, ...rest } = overrides;
   return {
     plan: {
@@ -80,9 +78,7 @@ describe('estimateRoadPlan', () => {
   });
 
   it('never charges below the arrival percentage', () => {
-    const result = estimateRoadPlan(
-      input({ stops: [{ charging: true, chargeTo: 10 }] }),
-    );
+    const result = estimateRoadPlan(input({ stops: [{ charging: true, chargeTo: 10 }] }));
 
     expect(result.points[1]).toMatchObject({
       arrivalPercent: 57.3,
@@ -116,9 +112,7 @@ describe('estimateRoadPlan', () => {
   });
 
   it('flags an arrival below the reserve level', () => {
-    const result = estimateRoadPlan(
-      input({ initialPercent: 30, minBattery: 20 }),
-    );
+    const result = estimateRoadPlan(input({ initialPercent: 30, minBattery: 20 }));
 
     expect(result.points[1]).toMatchObject({
       arrivalPercent: 7.3,
@@ -128,9 +122,7 @@ describe('estimateRoadPlan', () => {
   });
 
   it('treats an arrival exactly at the reserve as fine', () => {
-    const result = estimateRoadPlan(
-      input({ initialPercent: 23, minBattery: 0 }),
-    );
+    const result = estimateRoadPlan(input({ initialPercent: 23, minBattery: 0 }));
     expect(result.points[1]?.belowReserve).toBe(false);
   });
 
@@ -145,10 +137,13 @@ describe('estimateRoadPlan', () => {
 
   it('leaves gaps empty and still sums the distances it knows', () => {
     const result = estimateRoadPlan(
-      input({ legs: [null, 50], stops: [
-        { charging: false, chargeTo: 100 },
-        { charging: false, chargeTo: 100 },
-      ] }),
+      input({
+        legs: [null, 50],
+        stops: [
+          { charging: false, chargeTo: 100 },
+          { charging: false, chargeTo: 100 },
+        ],
+      }),
     );
 
     expect(result.points[1]?.arrivalPercent).toBeNull();

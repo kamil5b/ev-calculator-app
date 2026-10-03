@@ -1,5 +1,5 @@
 import type { RoadTripDraft } from '../entities/RoadTrip';
-import { MAX_TRIP_NAME_LENGTH, } from '../entities/RoadTrip';
+import { MAX_TRIP_NAME_LENGTH } from '../entities/RoadTrip';
 import { VALIDATION_MESSAGES, type FieldError } from '../entities/validation';
 
 /**

@@ -6,8 +6,7 @@ import { VALIDATION_MESSAGES } from '../../domain/entities/validation';
 
 /** Outcome of a save or update attempt. */
 export type RoadTripMutationResult =
-  | { readonly ok: true; readonly trip: RoadTrip }
-  | { readonly ok: false; readonly errors: FieldError[] };
+  { readonly ok: true; readonly trip: RoadTrip } | { readonly ok: false; readonly errors: FieldError[] };
 
 /**
  * Application service for saved road trips (PRD 11 extension).

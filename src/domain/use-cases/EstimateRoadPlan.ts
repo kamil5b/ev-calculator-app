@@ -164,7 +164,10 @@ export function estimateRoadPlan(input: RoadPlanInput): RoadPlanEstimate {
 }
 
 /** Placeholder for a point the chain cannot reach (missing data or broken chain). */
-function unreachedPoint(distance: number | null, stop: { charging: boolean; chargeTo: number }): RoadPointEstimate {
+function unreachedPoint(
+  distance: number | null,
+  stop: { charging: boolean; chargeTo: number },
+): RoadPointEstimate {
   return {
     isStart: false,
     legDistance: distance,

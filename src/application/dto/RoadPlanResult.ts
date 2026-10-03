@@ -1,9 +1,6 @@
 import type { DistanceUnit } from '../../domain/entities/DistanceUnit';
 import { NOT_AVAILABLE } from '../../domain/entities/validation';
-import type {
-  RoadPlanEstimate,
-  RoadPointEstimate,
-} from '../../domain/use-cases/EstimateRoadPlan';
+import type { RoadPlanEstimate, RoadPointEstimate } from '../../domain/use-cases/EstimateRoadPlan';
 import { formatCost, formatDistance, formatKWh } from './CalculationResult';
 
 /** Pre-rendered strings for one road plan point. */

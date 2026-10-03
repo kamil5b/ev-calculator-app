@@ -1,6 +1,12 @@
 import type { StoragePort } from '../../infrastructure/storage/LocalStorageAdapter';
 import { DEFAULT_BATTERY_STATE, type BatteryState } from '../../domain/entities/BatteryState';
-import { DEFAULT_ROAD_PLAN, MAX_ROAD_STOPS, type RoadPlan, type RoadStop } from '../../domain/entities/RoadPlan';
+import {
+  DEFAULT_ROAD_PLAN,
+  MAX_POINT_NAME_LENGTH,
+  MAX_ROAD_STOPS,
+  type RoadPlan,
+  type RoadStop,
+} from '../../domain/entities/RoadPlan';
 import { STORAGE_KEY } from '../../infrastructure/config/site';
 import {
   MAX_BATTERY_PERCENT,
@@ -97,6 +103,8 @@ export function normaliseBatteryState(raw: Partial<Record<keyof BatteryState, un
  * waypoints, empty/corrupt legs become `null` (the field just reads as
  * unfilled) and a missing or unusable payload falls back to the default plan.
  * Charging intent survives only as a strict `true`; anything else is "off".
+ * Point names are trimmed to {@link MAX_POINT_NAME_LENGTH} characters and
+ * forced to one entry per point (missing → `""` = automatic label).
  */
 export function coerceRoadPlan(raw: unknown): RoadPlan {
   if (raw === null || typeof raw !== 'object') return { ...DEFAULT_ROAD_PLAN };
@@ -120,10 +128,17 @@ export function coerceRoadPlan(raw: unknown): RoadPlan {
     };
   });
 
+  const rawNames = Array.isArray(record.names) ? record.names : [];
+  const names = Array.from({ length: legs.length + 1 }, (_, pointIndex) => {
+    const entry = rawNames[pointIndex];
+    return typeof entry === 'string' ? entry.slice(0, MAX_POINT_NAME_LENGTH) : '';
+  });
+
   return {
     initialPercent: coercePercent(record.initialPercent) ?? DEFAULT_ROAD_PLAN.initialPercent,
     legs,
     stops,
+    names,
   };
 }
 

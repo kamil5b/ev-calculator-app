@@ -13,6 +13,7 @@ const input = (
       initialPercent: initialPercent ?? 80,
       legs: legs ?? [100],
       stops: stops ?? [{ charging: false, chargeTo: 100 }],
+      names: ['', ''],
     },
     totalCapacity: 75,
     efficiency: 17,

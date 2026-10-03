@@ -241,5 +241,38 @@ describe('BatteryCalculator', () => {
       fireEvent.click(screen.getByRole('button', { name: 'mi' }));
       expect(screen.getByLabelText(/distance from start/i)).toHaveValue(62.14);
     });
+
+    it('names a point and uses the name everywhere', () => {
+      renderCalculator();
+      fireEvent.click(screen.getByRole('button', { name: /add stop/i }));
+
+      // One name field per point: Start, Stop 1, End.
+      const nameInputs = screen.getAllByLabelText(/^name$/i);
+      expect(nameInputs).toHaveLength(3);
+
+      fireEvent.change(nameInputs[1]!, { target: { value: 'Coffee' } });
+      expect(screen.getByText('Coffee')).toBeInTheDocument();
+      expect(screen.queryByText('Stop 1')).not.toBeInTheDocument();
+      // The end point's distance field is labelled from the previous point.
+      expect(screen.getByLabelText(/distance from coffee/i)).toBeInTheDocument();
+
+      fireEvent.change(nameInputs[0]!, { target: { value: 'Home' } });
+      expect(screen.getByText('Home')).toBeInTheDocument();
+      expect(screen.getByLabelText(/distance from home/i)).toBeInTheDocument();
+    });
+
+    it('keeps names attached to their points when stops are added and removed', () => {
+      renderCalculator();
+      fireEvent.click(screen.getByRole('button', { name: /add stop/i }));
+      fireEvent.change(screen.getAllByLabelText(/^name$/i)[1]!, { target: { value: 'Coffee' } });
+
+      // The remove control is named after the point it removes.
+      fireEvent.click(screen.getByRole('button', { name: /remove coffee/i }));
+      // The waypoint (and its name) is gone; Start and End remain.
+      expect(screen.queryByText('Coffee')).not.toBeInTheDocument();
+      fireEvent.click(screen.getByRole('button', { name: /add stop/i }));
+      expect(screen.queryByText('Stop 1')).toBeInTheDocument();
+      expect(screen.queryByText('Coffee')).not.toBeInTheDocument();
+    });
   });
 });

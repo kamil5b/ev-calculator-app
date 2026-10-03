@@ -20,6 +20,7 @@ const plainState = (overrides: Partial<BatteryState> = {}) =>
       initialPercent: 80,
       legs: [100],
       stops: [{ charging: false, chargeTo: 100 }],
+      names: ['', ''],
     },
     ...overrides,
   });
@@ -45,6 +46,7 @@ describe('RoadPlannerService', () => {
             { charging: true, chargeTo: 90 },
             { charging: false, chargeTo: 100 },
           ],
+          names: ['', '', ''],
         },
       }),
     );
@@ -65,6 +67,7 @@ describe('RoadPlannerService', () => {
             { charging: true, chargeTo: 90 },
             { charging: false, chargeTo: 100 },
           ],
+          names: ['', '', ''],
         },
       }),
     );
@@ -80,6 +83,7 @@ describe('RoadPlannerService', () => {
           initialPercent: 80,
           legs: [100],
           stops: [{ charging: true, chargeTo: 90 }],
+          names: ['', ''],
         },
       }),
     );
@@ -100,6 +104,7 @@ describe('RoadPlannerService', () => {
             { charging: false, chargeTo: 100 },
             { charging: false, chargeTo: 100 },
           ],
+          names: ['', '', ''],
         },
       }),
     );

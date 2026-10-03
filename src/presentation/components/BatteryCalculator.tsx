@@ -77,6 +77,7 @@ export function BatteryCalculator({ storage }: BatteryCalculatorProps) {
           onLegChange={calculator.setRoadLeg}
           onChargeToggle={calculator.setRoadCharge}
           onChargeToChange={calculator.setRoadChargeTo}
+          onPointNameChange={calculator.setRoadPointName}
           onAddStop={calculator.addRoadStop}
           onRemoveStop={calculator.removeRoadStop}
         />

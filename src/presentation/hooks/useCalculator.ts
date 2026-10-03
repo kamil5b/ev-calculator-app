@@ -10,7 +10,7 @@ import type { FieldError } from '../../domain/entities/validation';
 import { clampPercent } from '../../domain/use-cases/math';
 import { switchDistanceUnit } from '../../domain/use-cases/SwitchDistanceUnit';
 import type { DistanceUnit } from '../../domain/entities/DistanceUnit';
-import { MAX_ROAD_STOPS, type RoadPlan } from '../../domain/entities/RoadPlan';
+import { MAX_POINT_NAME_LENGTH, MAX_ROAD_STOPS, type RoadPlan } from '../../domain/entities/RoadPlan';
 import { roadPlannerService } from '../../application/services/RoadPlannerService';
 import type { RoadPlanResult } from '../../application/dto/RoadPlanResult';
 
@@ -37,6 +37,7 @@ export interface UseCalculator {
   setRoadLeg: (index: number, value: number | null) => void;
   setRoadCharge: (index: number, charging: boolean) => void;
   setRoadChargeTo: (index: number, value: number) => void;
+  setRoadPointName: (pointIndex: number, name: string) => void;
   addRoadStop: () => void;
   removeRoadStop: (index: number) => void;
   selectCar: (id: string | null) => void;
@@ -184,6 +185,20 @@ export function useCalculator(storage?: StoragePort): UseCalculator {
     [patchRoadStop],
   );
 
+  /** Free-text name for a point (start = 0); rebuilt to keep the array aligned
+   * with the points, so a stale payload can never swallow the edit. */
+  const setRoadPointName = useCallback((pointIndex: number, name: string) => {
+    setState((previous) => ({
+      ...previous,
+      roadPlan: {
+        ...previous.roadPlan,
+        names: Array.from({ length: previous.roadPlan.legs.length + 1 }, (_, index) =>
+          index === pointIndex ? name.slice(0, MAX_POINT_NAME_LENGTH) : previous.roadPlan.names[index] ?? '',
+        ),
+      },
+    }));
+  }, []);
+
   /** Inserts a waypoint immediately before the end point. */
   const addRoadStop = useCallback(() => {
     setState((previous) => {
@@ -200,6 +215,10 @@ export function useCalculator(storage?: StoragePort): UseCalculator {
             { charging: false, chargeTo: 100 },
             ...plan.stops.slice(insertAt),
           ],
+          // The new waypoint is point `insertAt + 1`; it starts unnamed.
+          names: Array.from({ length: plan.legs.length + 2 }, (_, pointIndex) =>
+            pointIndex === insertAt + 1 ? '' : plan.names[pointIndex] ?? '',
+          ),
         },
       };
     });
@@ -216,6 +235,10 @@ export function useCalculator(storage?: StoragePort): UseCalculator {
           ...plan,
           legs: plan.legs.filter((_, legIndex) => legIndex !== index),
           stops: plan.stops.filter((_, stopIndex) => stopIndex !== index),
+          // Dropping the waypoint drops point `index + 1`; the rest shift down.
+          names: Array.from({ length: plan.legs.length }, (_, pointIndex) =>
+            plan.names[pointIndex < index + 1 ? pointIndex : pointIndex + 1] ?? '',
+          ),
         },
       };
     });
@@ -311,6 +334,7 @@ export function useCalculator(storage?: StoragePort): UseCalculator {
     setRoadLeg,
     setRoadCharge,
     setRoadChargeTo,
+    setRoadPointName,
     addRoadStop,
     removeRoadStop,
     selectCar,

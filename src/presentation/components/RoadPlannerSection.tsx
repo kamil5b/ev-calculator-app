@@ -1,6 +1,11 @@
 import type { BatteryState } from '../../domain/entities/BatteryState';
 import type { RoadPlanResult } from '../../application/dto/RoadPlanResult';
-import { MAX_ROAD_STOPS, waypointCount } from '../../domain/entities/RoadPlan';
+import {
+  MAX_POINT_NAME_LENGTH,
+  MAX_ROAD_STOPS,
+  roadPointName,
+  waypointCount,
+} from '../../domain/entities/RoadPlan';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './common/Card';
 import { fromFieldValue, Input, toFieldValue } from './common/Input';
 import { Slider } from './common/Slider';
@@ -15,6 +20,7 @@ export type RoadPlannerSectionProps = {
   onLegChange: (index: number, value: number | null) => void;
   onChargeToggle: (index: number, charging: boolean) => void;
   onChargeToChange: (index: number, value: number) => void;
+  onPointNameChange: (pointIndex: number, name: string) => void;
   onAddStop: () => void;
   onRemoveStop: (index: number) => void;
 };
@@ -35,18 +41,15 @@ export function RoadPlannerSection({
   onLegChange,
   onChargeToggle,
   onChargeToChange,
+  onPointNameChange,
   onAddStop,
   onRemoveStop,
 }: RoadPlannerSectionProps) {
   const plan = state.roadPlan;
   const unit = state.distanceUnit;
 
-  /** `start`, `Stop 1`… for waypoints, `End` for the last point. */
-  const pointName = (pointIndex: number): string => {
-    if (pointIndex === 0) return 'start';
-    if (pointIndex === plan.legs.length) return 'End';
-    return `Stop ${pointIndex}`;
-  };
+  /** The user's free text, or the automatic label (`Start`, `Stop 1`…, `End`). */
+  const pointName = (pointIndex: number): string => roadPointName(plan, pointIndex);
 
   return (
     <Card aria-labelledby="road-heading">
@@ -64,7 +67,14 @@ export function RoadPlannerSection({
         )}
 
         <section class="space-y-2 rounded-lg border border-slate-200 p-3">
-          <p class="text-sm font-semibold text-slate-900">Start</p>
+          <p class="text-sm font-semibold text-slate-900">{pointName(0)}</p>
+          <Input
+            label="Name"
+            value={plan.names[0] ?? ''}
+            placeholder={pointName(0)}
+            maxLength={MAX_POINT_NAME_LENGTH}
+            onValueChange={(value) => onPointNameChange(0, value)}
+          />
           <Input
             label="Initial battery"
             type="number"
@@ -105,6 +115,14 @@ export function RoadPlannerSection({
                   </Button>
                 )}
               </div>
+
+              <Input
+                label="Name"
+                value={plan.names[pointIndex] ?? ''}
+                placeholder={name}
+                maxLength={MAX_POINT_NAME_LENGTH}
+                onValueChange={(value) => onPointNameChange(pointIndex, value)}
+              />
 
               <Input
                 label={`Distance from ${pointName(pointIndex - 1)}`}

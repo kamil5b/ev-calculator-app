@@ -8,7 +8,7 @@ import {
   safeParse,
 } from '../PersistenceService';
 import { DEFAULT_BATTERY_STATE } from '../../../domain/entities/BatteryState';
-import { DEFAULT_ROAD_PLAN, MAX_ROAD_STOPS } from '../../../domain/entities/RoadPlan';
+import { DEFAULT_ROAD_PLAN, MAX_POINT_NAME_LENGTH, MAX_ROAD_STOPS } from '../../../domain/entities/RoadPlan';
 import { MemoryStorageAdapter, type StoragePort } from '../../../infrastructure/storage/LocalStorageAdapter';
 
 const KEY = 'ev_calculator_state';
@@ -45,6 +45,7 @@ describe('PersistenceService', () => {
             { charging: true, chargeTo: 90 },
             { charging: false, chargeTo: 100 },
           ],
+          names: ['Home', 'Coffee', 'Office'],
         },
       };
       expect(service.save(state)).toBe(true);
@@ -280,6 +281,7 @@ describe('PersistenceService road planner fields', () => {
             { charging: true, chargeTo: 90 },
             { charging: false, chargeTo: 100 },
           ],
+          names: ['Home', 'Coffee', 'Office'],
         },
       }),
     );
@@ -290,6 +292,7 @@ describe('PersistenceService road planner fields', () => {
         { charging: true, chargeTo: 90 },
         { charging: false, chargeTo: 100 },
       ],
+      names: ['Home', 'Coffee', 'Office'],
     });
   });
 
@@ -312,6 +315,8 @@ describe('PersistenceService road planner fields', () => {
         { charging: false, chargeTo: 100 },
         { charging: false, chargeTo: 100 },
       ],
+      // No names in the payload (older build) → one empty entry per point.
+      names: ['', '', '', ''],
     });
   });
 
@@ -329,5 +334,24 @@ describe('PersistenceService road planner fields', () => {
     const plan = service.load().roadPlan;
     expect(plan.legs).toHaveLength(MAX_ROAD_STOPS + 1);
     expect(plan.stops).toHaveLength(MAX_ROAD_STOPS + 1);
+    expect(plan.names).toHaveLength(MAX_ROAD_STOPS + 2);
+  });
+
+  it('coerces point names: strings capped, non-strings and extras dropped', () => {
+    storage.setItem(
+      KEY,
+      JSON.stringify({
+        roadPlan: {
+          initialPercent: 50,
+          legs: [10, 20],
+          stops: [
+            { charging: false, chargeTo: 100 },
+            { charging: false, chargeTo: 100 },
+          ],
+          names: ['x'.repeat(100), 42, 'Office', 'Extra point'],
+        },
+      }),
+    );
+    expect(service.load().roadPlan.names).toEqual(['x'.repeat(MAX_POINT_NAME_LENGTH), '', 'Office']);
   });
 });

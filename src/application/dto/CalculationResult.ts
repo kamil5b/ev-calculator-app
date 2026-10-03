@@ -36,6 +36,8 @@ export interface CalculationResult {
   readonly trip: ChargeEstimate | null;
   /** Price of charging to target, 2 decimals; `null` without a rate. */
   readonly chargeCost: number | null;
+  /** Price of charging at the trip target, 2 decimals; `null` without trip or rate. */
+  readonly tripChargeCost: number | null;
   /** Rendered strings, pre-formatted so components stay logic-free. */
   readonly labels: CalculationLabels;
 }
@@ -52,6 +54,7 @@ export interface CalculationLabels {
   /** `"You must charge 67.3 kWh (from 18% to 100%)"`, `"⚠️ Too far away"`, or `null`. */
   readonly chargeAtTarget: string | null;
   readonly chargeCost: string;
+  readonly tripChargeCost: string;
 }
 
 /** Shown in place of the trip outputs when the target cannot be reached. */
@@ -68,10 +71,12 @@ export function buildCalculationLabels(input: {
   distanceUnit?: DistanceUnit;
   trip?: ChargeEstimate | null;
   chargeCost?: number | null;
+  tripChargeCost?: number | null;
 }): CalculationLabels {
   const unit = input.distanceUnit ?? 'km';
   const trip = input.trip ?? null;
   const chargeCost = input.chargeCost ?? null;
+  const tripChargeCost = input.tripChargeCost ?? null;
 
   return {
     currentKWh: `Current battery: ${formatKWh(input.currentKWh)}`,
@@ -97,7 +102,10 @@ export function buildCalculationLabels(input: {
         : trip.kWhToCharge === null
           ? TOO_FAR_AWAY
           : `You must charge ${formatKWh(trip.kWhToCharge)} (from ${trip.leftPercent}% to 100%)`,
-    chargeCost: `Charging to target: ${chargeCost === null ? NOT_AVAILABLE : formatCost(chargeCost)}`,
+    chargeCost: `Charge Cost to Battery Target: ${chargeCost === null ? NOT_AVAILABLE : formatCost(chargeCost)}`,
+    tripChargeCost: `Charge cost at target: ${
+      tripChargeCost === null ? NOT_AVAILABLE : formatCost(tripChargeCost)
+    }`,
   };
 }
 

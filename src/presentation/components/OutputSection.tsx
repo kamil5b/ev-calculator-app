@@ -1,5 +1,6 @@
-import type { CalculationResult } from '../../application/dto/CalculationResult';
+import { formatCost, type CalculationResult } from '../../application/dto/CalculationResult';
 import type { BatteryState } from '../../domain/entities/BatteryState';
+import { NOT_AVAILABLE } from '../../domain/entities/validation';
 import { Card, CardContent, CardHeader, CardTitle } from './common/Card';
 import { Badge } from './common/Badge';
 import { efficiencyBounds, efficiencyUnitLabel } from '../../domain/entities/DistanceUnit';
@@ -47,14 +48,19 @@ export function OutputSection({ state, result }: OutputSectionProps) {
             tone={isDischarging ? 'neutral' : 'positive'}
           />
           <Row
+            label={result.labels.chargeCost}
+            value={money(result.chargeCost)}
+            tone={result.chargeCost === null ? 'muted' : 'default'}
+          />
+          <Row
             label={result.labels.range}
-            value={rangeUnavailable ? 'N/A' : `${result.range} ${unit}`}
+            value={rangeUnavailable ? NOT_AVAILABLE : `${result.range} ${unit}`}
             tone={rangeUnavailable ? 'muted' : 'default'}
           />
           <Row label={result.labels.usableKWh} value={`${result.usableKWh} kWh`} />
           <Row
             label={result.labels.fullRange}
-            value={result.fullRange === null ? 'N/A' : `${result.fullRange} ${unit}`}
+            value={result.fullRange === null ? NOT_AVAILABLE : `${result.fullRange} ${unit}`}
             tone={result.fullRange === null ? 'muted' : 'default'}
           />
           {hasTrip && (
@@ -69,16 +75,14 @@ export function OutputSection({ state, result }: OutputSectionProps) {
                 value={result.labels.chargeAtTarget ?? ''}
                 tone={tripWarn ? 'warning' : 'default'}
               />
+              <Row
+                label={result.labels.tripChargeCost}
+                value={money(result.tripChargeCost)}
+                tone={result.tripChargeCost === null ? 'muted' : 'default'}
+              />
             </>
           )}
         </dl>
-
-        <p
-          class={`text-base font-medium tabular-nums ${result.chargeCost === null ? 'text-slate-400' : 'text-slate-900'}`}
-          aria-live="polite"
-        >
-          {result.labels.chargeCost}
-        </p>
 
         <p class="text-xs text-slate-500">
           {result.range === null
@@ -88,6 +92,11 @@ export function OutputSection({ state, result }: OutputSectionProps) {
       </CardContent>
     </Card>
   );
+}
+
+/** `€12.92` for a priced session, `N/A` when no rate (or trip) is available. */
+function money(value: number | null): string {
+  return value === null ? NOT_AVAILABLE : formatCost(value);
 }
 
 type RowProps = {

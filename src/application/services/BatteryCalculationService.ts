@@ -71,6 +71,13 @@ export class BatteryCalculationService {
 
     const chargeCost = calculateChargeCost({ kWh: neededKWh, ratePerKWh: state.electricityRate });
 
+    // Pricing the energy the trip says you must buy at the destination. A null
+    // `kWhToCharge` (unreachable target) or a missing rate yields N/A in the UI.
+    const tripChargeCost =
+      trip === null || trip.kWhToCharge === null
+        ? null
+        : calculateChargeCost({ kWh: trip.kWhToCharge, ratePerKWh: state.electricityRate });
+
     const derived = {
       currentKWh,
       neededKWh,
@@ -81,6 +88,7 @@ export class BatteryCalculationService {
       distanceUnit: state.distanceUnit,
       trip,
       chargeCost,
+      tripChargeCost,
     };
 
     return { ...derived, labels: buildCalculationLabels(derived) };

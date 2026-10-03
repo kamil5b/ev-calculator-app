@@ -137,11 +137,35 @@ describe('BatteryCalculationService', () => {
         state({ totalCapacity: 82, currentBattery: 45, targetBattery: 90, electricityRate: 0.35 }),
       );
       expect(result.chargeCost).toBe(12.92);
-      expect(result.labels.chargeCost).toBe('Charging to target: €12.92');
+      expect(result.labels.chargeCost).toBe('Charge Cost to Battery Target: €12.92');
     });
 
     it('renders N/A without a rate', () => {
-      expect(service.calculate(state()).labels.chargeCost).toBe('Charging to target: N/A');
+      expect(service.calculate(state()).labels.chargeCost).toBe('Charge Cost to Battery Target: N/A');
+    });
+
+    it('prices the charge needed at the trip target', () => {
+      const result = service.calculate(
+        state({
+          totalCapacity: 82,
+          currentBattery: 20,
+          efficiency: 17,
+          tripDistance: 10,
+          electricityRate: 0.35,
+        }),
+      );
+      // 67.3 kWh at the destination × €0.35 = €23.555 → rounds to €23.55.
+      expect(result.tripChargeCost).toBe(23.55);
+      expect(result.labels.tripChargeCost).toBe('Charge cost at target: €23.55');
+    });
+
+    it('renders N/A for the trip price without a rate or an unreachable target', () => {
+      expect(service.calculate(state({ tripDistance: 50 })).labels.tripChargeCost).toBe(
+        'Charge cost at target: N/A',
+      );
+      expect(
+        service.calculate(state({ tripDistance: 500, electricityRate: 0.35 })).labels.tripChargeCost,
+      ).toBe('Charge cost at target: N/A');
     });
   });
 

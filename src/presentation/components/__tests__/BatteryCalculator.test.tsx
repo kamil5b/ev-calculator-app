@@ -153,7 +153,7 @@ describe('BatteryCalculator', () => {
       renderCalculator();
       // Default: 75 kWh pack, 50% → 100% = 37.5 kWh.
       fireEvent.change(screen.getByLabelText(/electricity price/i), { target: { value: '0.4' } });
-      expect(screen.getByText('Charging to target: €15.00')).toBeInTheDocument();
+      expect(screen.getByText('Charge Cost to Battery Target: €15.00')).toBeInTheDocument();
     });
 
     it('switches distances and efficiency to miles and back', () => {

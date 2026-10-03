@@ -137,7 +137,7 @@ describe('BatteryCalculationService', () => {
         state({ totalCapacity: 82, currentBattery: 45, targetBattery: 90, electricityRate: 0.35 }),
       );
       expect(result.chargeCost).toBe(12.92);
-      expect(result.labels.chargeCost).toBe('Charge Cost to Battery Target: €12.92');
+      expect(result.labels.chargeCost).toBe('Charge Cost to Battery Target: CUR12.92');
     });
 
     it('renders N/A without a rate', () => {
@@ -154,9 +154,9 @@ describe('BatteryCalculationService', () => {
           electricityRate: 0.35,
         }),
       );
-      // 67.3 kWh at the destination × €0.35 = €23.555 → rounds to €23.55.
+      // 67.3 kWh at the destination × 0.35 = 23.555 → rounds to 23.55.
       expect(result.tripChargeCost).toBe(23.55);
-      expect(result.labels.tripChargeCost).toBe('Charge cost at target: €23.55');
+      expect(result.labels.tripChargeCost).toBe('Charge cost at target: CUR23.55');
     });
 
     it('renders N/A for the trip price without a rate or an unreachable target', () => {
@@ -166,6 +166,32 @@ describe('BatteryCalculationService', () => {
       expect(
         service.calculate(state({ tripDistance: 500, electricityRate: 0.35 })).labels.tripChargeCost,
       ).toBe('Charge cost at target: N/A');
+    });
+  });
+
+  describe('currency symbol', () => {
+    it('prefixes every price with CUR by default', () => {
+      const result = service.calculate(state({ electricityRate: 0.4, tripDistance: 50, efficiency: 17 }));
+      expect(result.labels.chargeCost).toBe('Charge Cost to Battery Target: CUR15.00');
+    });
+
+    it('prefixes every price with the symbol the user typed', () => {
+      const result = service.calculate(
+        state({
+          electricityRate: 0.4,
+          tripDistance: 50,
+          efficiency: 17,
+          currencySymbol: 'IDR',
+        }),
+      );
+      expect(result.labels.chargeCost).toBe('Charge Cost to Battery Target: IDR15.00');
+      // 75 kWh pack − 29 kWh left after 50 km = 46 kWh × 0.4.
+      expect(result.labels.tripChargeCost).toBe('Charge cost at target: IDR18.40');
+    });
+
+    it('falls back to CUR while the field is blank', () => {
+      const result = service.calculate(state({ electricityRate: 0.4, currencySymbol: '' }));
+      expect(result.labels.chargeCost).toBe('Charge Cost to Battery Target: CUR15.00');
     });
   });
 

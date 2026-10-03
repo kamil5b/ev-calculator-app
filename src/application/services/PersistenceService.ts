@@ -1,5 +1,10 @@
 import type { StoragePort } from '../../infrastructure/storage/LocalStorageAdapter';
-import { DEFAULT_BATTERY_STATE, type BatteryState } from '../../domain/entities/BatteryState';
+import {
+  DEFAULT_BATTERY_STATE,
+  DEFAULT_CURRENCY_SYMBOL,
+  resolveCurrencySymbol,
+  type BatteryState,
+} from '../../domain/entities/BatteryState';
 import {
   DEFAULT_ROAD_PLAN,
   MAX_POINT_NAME_LENGTH,
@@ -92,6 +97,7 @@ export function normaliseBatteryState(raw: Partial<Record<keyof BatteryState, un
     distanceUnit,
     tripDistance: coerceNonNegative(raw.tripDistance),
     electricityRate: coerceNonNegative(raw.electricityRate),
+    currencySymbol: coerceCurrencySymbol(raw.currencySymbol),
     roadPlan: coerceRoadPlan(raw.roadPlan),
   };
 }
@@ -196,6 +202,17 @@ export function coerceNonNegative(value: unknown): number | null {
   const numeric = toNumber(value);
   if (numeric === null || numeric < 0) return null;
   return numeric;
+}
+
+/**
+ * Returns the stored currency symbol, or {@link DEFAULT_CURRENCY_SYMBOL}.
+ *
+ * Unlike the optional numeric fields there is no meaningful "empty" value to
+ * preserve: a blank symbol would render as `/kWh`, so anything unusable falls
+ * back to the placeholder the UI shows on a first run.
+ */
+export function coerceCurrencySymbol(value: unknown): string {
+  return typeof value === 'string' ? resolveCurrencySymbol(value) : DEFAULT_CURRENCY_SYMBOL;
 }
 
 /** Coerces unknown input (string or number) to a finite number, or `null`. */

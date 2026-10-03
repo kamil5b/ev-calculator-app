@@ -60,6 +60,7 @@ export function BatteryCalculator({ storage }: BatteryCalculatorProps) {
           onMinBatteryChange={calculator.setMinBattery}
           onEfficiencyChange={calculator.setEfficiency}
           onElectricityRateChange={calculator.setElectricityRate}
+          onCurrencySymbolChange={calculator.setCurrencySymbol}
           onTripDistanceChange={calculator.setTripDistance}
           onSelectCar={calculator.selectCar}
           onAddCar={calculator.addCar}

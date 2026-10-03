@@ -91,7 +91,10 @@ export class BatteryCalculationService {
       tripChargeCost,
     };
 
-    return { ...derived, labels: buildCalculationLabels(derived) };
+    return {
+      ...derived,
+      labels: buildCalculationLabels({ ...derived, currencySymbol: state.currencySymbol }),
+    };
   }
 }
 

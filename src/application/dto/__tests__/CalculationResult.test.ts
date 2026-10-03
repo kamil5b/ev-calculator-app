@@ -68,9 +68,19 @@ describe('formatDistance', () => {
 });
 
 describe('formatCost', () => {
-  it('always renders two decimals', () => {
-    expect(formatCost(12.3)).toBe('€12.30');
-    expect(formatCost(0)).toBe('€0.00');
+  it('always renders two decimals with the default symbol', () => {
+    expect(formatCost(12.3)).toBe('CUR12.30');
+    expect(formatCost(0)).toBe('CUR0.00');
+  });
+
+  it('prefixes the user-supplied symbol', () => {
+    expect(formatCost(12.3, '€')).toBe('€12.30');
+    expect(formatCost(12.3, 'IDR')).toBe('IDR12.30');
+  });
+
+  it('falls back to the default symbol when the input is blank', () => {
+    expect(formatCost(12.3, '')).toBe('CUR12.30');
+    expect(formatCost(12.3, '   ')).toBe('CUR12.30');
   });
 
   it('renders N/A for non-finite input', () => {

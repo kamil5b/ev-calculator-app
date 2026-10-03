@@ -1,9 +1,7 @@
 import { NOT_AVAILABLE } from '../../domain/entities/validation';
 import type { DistanceUnit } from '../../domain/entities/DistanceUnit';
+import { resolveCurrencySymbol } from '../../domain/entities/BatteryState';
 import type { ChargeEstimate } from '../../domain/use-cases/ChargeEstimator';
-
-/** Currency the price calculator quotes in (PRD 10, Phase 2). */
-export const CURRENCY_SYMBOL = '€';
 
 /**
  * Everything the presentation layer needs to render the output section.
@@ -72,11 +70,14 @@ export function buildCalculationLabels(input: {
   trip?: ChargeEstimate | null;
   chargeCost?: number | null;
   tripChargeCost?: number | null;
+  /** User-chosen currency symbol; blank/absent falls back to `CUR`. */
+  currencySymbol?: string;
 }): CalculationLabels {
   const unit = input.distanceUnit ?? 'km';
   const trip = input.trip ?? null;
   const chargeCost = input.chargeCost ?? null;
   const tripChargeCost = input.tripChargeCost ?? null;
+  const symbol = resolveCurrencySymbol(input.currencySymbol);
 
   return {
     currentKWh: `Current battery: ${formatKWh(input.currentKWh)}`,
@@ -102,9 +103,9 @@ export function buildCalculationLabels(input: {
         : trip.kWhToCharge === null
           ? TOO_FAR_AWAY
           : `You must charge ${formatKWh(trip.kWhToCharge)} (from ${trip.leftPercent}% to 100%)`,
-    chargeCost: `Charge Cost to Battery Target: ${chargeCost === null ? NOT_AVAILABLE : formatCost(chargeCost)}`,
+    chargeCost: `Charge Cost to Battery Target: ${chargeCost === null ? NOT_AVAILABLE : formatCost(chargeCost, symbol)}`,
     tripChargeCost: `Charge cost at target: ${
-      tripChargeCost === null ? NOT_AVAILABLE : formatCost(tripChargeCost)
+      tripChargeCost === null ? NOT_AVAILABLE : formatCost(tripChargeCost, symbol)
     }`,
   };
 }
@@ -131,8 +132,8 @@ export function formatDistance(value: number, unit: DistanceUnit = 'km'): string
   return `${Math.round(value)} ${unit}`;
 }
 
-/** `€12.30` — always two decimals, as prices are read. */
-export function formatCost(value: number): string {
+/** `€12.30` / `CUR12.30` — always two decimals, as prices are read. */
+export function formatCost(value: number, currencySymbol?: string): string {
   if (!Number.isFinite(value)) return NOT_AVAILABLE;
-  return `${CURRENCY_SYMBOL}${value.toFixed(2)}`;
+  return `${resolveCurrencySymbol(currencySymbol)}${value.toFixed(2)}`;
 }

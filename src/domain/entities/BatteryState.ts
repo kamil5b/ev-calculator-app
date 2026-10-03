@@ -1,6 +1,20 @@
 import type { DistanceUnit } from './DistanceUnit';
 import { DEFAULT_ROAD_PLAN, type RoadPlan } from './RoadPlan';
 
+/** Placeholder used until the user types their own currency (e.g. `€`, `USD`). */
+export const DEFAULT_CURRENCY_SYMBOL = 'CUR';
+
+/** Longest currency symbol the calculator will store or display. */
+export const MAX_CURRENCY_SYMBOL_LENGTH = 5;
+
+/** The symbol to render for `value`: trimmed, capped, or the default when blank. */
+export function resolveCurrencySymbol(value: string | null | undefined): string {
+  const trimmed = value?.trim();
+  return trimmed === undefined || trimmed === ''
+    ? DEFAULT_CURRENCY_SYMBOL
+    : trimmed.slice(0, MAX_CURRENCY_SYMBOL_LENGTH);
+}
+
 /**
  * Domain entity describing the aggregate persisted for the calculator.
  *
@@ -27,6 +41,12 @@ export interface BatteryState {
   readonly tripDistance: number | null;
   /** Electricity price per kWh, or `null` when the user has not supplied one. */
   readonly electricityRate: number | null;
+  /**
+   * Free-text currency shown before every price (`€`, `USD`, `IDR`, …).
+   * May be blank while the user is typing; renderers fall back to
+   * {@link DEFAULT_CURRENCY_SYMBOL}.
+   */
+  readonly currencySymbol: string;
   /** EV Road Planner input (PRD 11); independent of the fields above. */
   readonly roadPlan: RoadPlan;
 }
@@ -77,5 +97,6 @@ export const DEFAULT_BATTERY_STATE: BatteryState = {
   distanceUnit: 'km',
   tripDistance: null,
   electricityRate: null,
+  currencySymbol: DEFAULT_CURRENCY_SYMBOL,
   roadPlan: DEFAULT_ROAD_PLAN,
 };

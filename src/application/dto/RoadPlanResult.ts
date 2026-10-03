@@ -1,5 +1,6 @@
 import type { DistanceUnit } from '../../domain/entities/DistanceUnit';
 import { NOT_AVAILABLE } from '../../domain/entities/validation';
+import { resolveCurrencySymbol } from '../../domain/entities/BatteryState';
 import type { RoadPlanEstimate, RoadPointEstimate } from '../../domain/use-cases/EstimateRoadPlan';
 import { formatCost, formatDistance, formatKWh } from './CalculationResult';
 
@@ -10,14 +11,14 @@ export interface RoadPointLabels {
    * `null` = render nothing (the start point, or no efficiency entered).
    */
   readonly arrival: string | null;
-  /** `"24.5 kWh · €8.57"` or `"N/A"`; `null` = not charging / end point. */
+  /** `"24.5 kWh · CUR8.57"` or `"N/A"`; `null` = not charging / end point. */
   readonly charge: string | null;
 }
 
 /** Pre-rendered strings for the plan summary. */
 export interface RoadPlanLabels {
   readonly points: RoadPointLabels[];
-  /** `"150 km · 25.5 kWh used · 24.5 kWh charged · €8.57"`; `null` = nothing computed. */
+  /** `"150 km · 25.5 kWh used · 24.5 kWh charged · CUR8.57"`; `null` = nothing computed. */
   readonly totals: string | null;
 }
 
@@ -36,15 +37,20 @@ export interface RoadPlanResult {
  * The last point is the end of the trip — it never reports a charging session,
  * even if a corrupt payload claims otherwise.
  */
-export function buildRoadPlanLabels(estimate: RoadPlanEstimate, unit: DistanceUnit): RoadPlanLabels {
+export function buildRoadPlanLabels(
+  estimate: RoadPlanEstimate,
+  unit: DistanceUnit,
+  currencySymbol?: string,
+): RoadPlanLabels {
   const lastIndex = estimate.points.length - 1;
+  const symbol = resolveCurrencySymbol(currencySymbol);
 
   const points = estimate.points.map((point, index): RoadPointLabels => ({
     arrival: arrivalLabel(point, estimate.available),
-    charge: chargeLabel(point, index === lastIndex),
+    charge: chargeLabel(point, index === lastIndex, symbol),
   }));
 
-  return { points, totals: totalsLabel(estimate, unit) };
+  return { points, totals: totalsLabel(estimate, unit, symbol) };
 }
 
 function arrivalLabel(point: RoadPointEstimate, available: boolean): string | null {
@@ -54,17 +60,17 @@ function arrivalLabel(point: RoadPointEstimate, available: boolean): string | nu
   return `${Math.round(point.arrivalPercent)}%`;
 }
 
-function chargeLabel(point: RoadPointEstimate, isEnd: boolean): string | null {
+function chargeLabel(point: RoadPointEstimate, isEnd: boolean, symbol: string): string | null {
   // The start/end never report a session; an uncharged waypoint hides the row;
   // charging with unknown numbers (broken chain, missing efficiency) shows N/A.
   if (point.isStart || isEnd || !point.charging) return null;
   if (point.chargeKWh === null) return NOT_AVAILABLE;
   return `${formatKWh(point.chargeKWh)} · ${
-    point.chargeCost === null ? NOT_AVAILABLE : formatCost(point.chargeCost)
+    point.chargeCost === null ? NOT_AVAILABLE : formatCost(point.chargeCost, symbol)
   }`;
 }
 
-function totalsLabel(estimate: RoadPlanEstimate, unit: DistanceUnit): string | null {
+function totalsLabel(estimate: RoadPlanEstimate, unit: DistanceUnit, symbol: string): string | null {
   const { totalDistance, totalEnergyKWh, totalChargeKWh, totalChargeCost } = estimate.totals;
   const parts: string[] = [];
 
@@ -72,7 +78,7 @@ function totalsLabel(estimate: RoadPlanEstimate, unit: DistanceUnit): string | n
   if (totalEnergyKWh !== null) parts.push(`${formatKWh(totalEnergyKWh)} used`);
   if (totalChargeKWh !== null) {
     parts.push(`${formatKWh(totalChargeKWh)} charged`);
-    parts.push(totalChargeCost === null ? NOT_AVAILABLE : formatCost(totalChargeCost));
+    parts.push(totalChargeCost === null ? NOT_AVAILABLE : formatCost(totalChargeCost, symbol));
   }
 
   return parts.length > 0 ? parts.join(' · ') : null;

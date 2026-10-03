@@ -153,7 +153,29 @@ describe('BatteryCalculator', () => {
       renderCalculator();
       // Default: 75 kWh pack, 50% → 100% = 37.5 kWh.
       fireEvent.change(screen.getByLabelText(/electricity price/i), { target: { value: '0.4' } });
-      expect(screen.getByText('Charge Cost to Battery Target: €15.00')).toBeInTheDocument();
+      expect(screen.getByText('Charge Cost to Battery Target: CUR15.00')).toBeInTheDocument();
+    });
+
+    it('prices every figure with the currency symbol the user types', () => {
+      renderCalculator();
+      fireEvent.change(screen.getByLabelText(/electricity price/i), { target: { value: '0.4' } });
+      expect(screen.getByText('CUR/kWh')).toBeInTheDocument();
+
+      fireEvent.change(screen.getByLabelText(/^currency symbol$/i), { target: { value: 'IDR' } });
+
+      expect(screen.getByText('Charge Cost to Battery Target: IDR15.00')).toBeInTheDocument();
+      expect(screen.getByText('IDR/kWh')).toBeInTheDocument();
+      expect(screen.queryByText('CUR/kWh')).not.toBeInTheDocument();
+    });
+
+    it('keeps the chosen currency symbol across reloads', () => {
+      const first = renderCalculator();
+      fireEvent.change(screen.getByLabelText(/^currency symbol$/i), { target: { value: '₹' } });
+      first.unmount();
+
+      renderCalculator();
+      expect(screen.getByLabelText(/^currency symbol$/i)).toHaveValue('₹');
+      expect(screen.getByText('₹/kWh')).toBeInTheDocument();
     });
 
     it('switches distances and efficiency to miles and back', () => {
@@ -219,8 +241,8 @@ describe('BatteryCalculator', () => {
       fireEvent.change(screen.getByLabelText(/charge here/i), { target: { checked: true } });
 
       expect(screen.getByRole('slider', { name: /charge to/i })).toBeInTheDocument();
-      // Arrival 57.3 % → 100 % = 42.7 % of 75 kWh = 32 kWh × €0.40 = €12.80.
-      expect(screen.getByText('32 kWh · €12.80')).toBeInTheDocument();
+      // Arrival 57.3 % → 100 % = 42.7 % of 75 kWh = 32 kWh × €0.40 = CUR12.80.
+      expect(screen.getByText('32 kWh · CUR12.80')).toBeInTheDocument();
     });
 
     it('warns when a leg is too far to drive', () => {

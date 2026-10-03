@@ -38,6 +38,7 @@ describe('PersistenceService', () => {
         distanceUnit: 'mi' as const,
         tripDistance: 31.1,
         electricityRate: 0.35,
+        currencySymbol: 'IDR',
         roadPlan: {
           initialPercent: 65,
           legs: [120.5, null],
@@ -253,6 +254,39 @@ describe('PersistenceService Phase 2 fields', () => {
     const loaded = service.load();
     expect(loaded.tripDistance).toBeNull();
     expect(loaded.electricityRate).toBeNull();
+  });
+});
+
+describe('PersistenceService currency symbol', () => {
+  let storage: MemoryStorageAdapter;
+  let service: PersistenceService;
+
+  beforeEach(() => {
+    storage = new MemoryStorageAdapter();
+    service = new PersistenceService(storage, KEY);
+  });
+
+  it('defaults to CUR when an older build wrote no symbol', () => {
+    storage.setItem(KEY, JSON.stringify({ totalCapacity: 82 }));
+    expect(service.load().currencySymbol).toBe('CUR');
+  });
+
+  it('keeps the symbol the user typed', () => {
+    storage.setItem(KEY, JSON.stringify({ currencySymbol: '₹' }));
+    expect(service.load().currencySymbol).toBe('₹');
+  });
+
+  it('trims and caps an over-long symbol', () => {
+    storage.setItem(KEY, JSON.stringify({ currencySymbol: '  Indonesian Rupiah  ' }));
+    expect(service.load().currencySymbol).toBe('Indon');
+
+    storage.setItem(KEY, JSON.stringify({ currencySymbol: 42 }));
+    expect(service.load().currencySymbol).toBe('CUR');
+  });
+
+  it('falls back to CUR for a blank symbol', () => {
+    storage.setItem(KEY, JSON.stringify({ currencySymbol: '   ' }));
+    expect(service.load().currencySymbol).toBe('CUR');
   });
 });
 

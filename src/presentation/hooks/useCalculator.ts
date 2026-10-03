@@ -1,7 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'preact/hooks';
 import { createContainer, type Container } from '../../infrastructure/compositionRoot';
 import type { StoragePort } from '../../infrastructure/storage/LocalStorageAdapter';
-import { DEFAULT_BATTERY_STATE, type BatteryState } from '../../domain/entities/BatteryState';
+import {
+  DEFAULT_BATTERY_STATE,
+  MAX_CURRENCY_SYMBOL_LENGTH,
+  type BatteryState,
+} from '../../domain/entities/BatteryState';
 import { DEFAULT_ROAD_PLAN } from '../../domain/entities/RoadPlan';
 import type { CarModel } from '../../domain/entities/CarModel';
 import type { CalculationResult } from '../../application/dto/CalculationResult';
@@ -38,6 +42,7 @@ export interface UseCalculator {
   setDistanceUnit: (unit: DistanceUnit) => void;
   setTripDistance: (value: number | null) => void;
   setElectricityRate: (value: number | null) => void;
+  setCurrencySymbol: (value: string) => void;
   setRoadInitialPercent: (value: number) => void;
   setRoadLeg: (index: number, value: number | null) => void;
   setRoadCharge: (index: number, charging: boolean) => void;
@@ -152,6 +157,16 @@ export function useCalculator(storage?: StoragePort): UseCalculator {
   const setTripDistance = useCallback((value: number | null) => patch({ tripDistance: value }), [patch]);
   const setElectricityRate = useCallback(
     (value: number | null) => patch({ electricityRate: value }),
+    [patch],
+  );
+
+  /**
+   * Free text, trimmed and capped rather than validated: a blank value is
+   * tolerated so the field stays editable, and every renderer falls back to
+   * the placeholder (see `resolveCurrencySymbol`).
+   */
+  const setCurrencySymbol = useCallback(
+    (value: string) => patch({ currencySymbol: value.trim().slice(0, MAX_CURRENCY_SYMBOL_LENGTH) }),
     [patch],
   );
 
@@ -420,6 +435,7 @@ export function useCalculator(storage?: StoragePort): UseCalculator {
     setDistanceUnit,
     setTripDistance,
     setElectricityRate,
+    setCurrencySymbol,
     setRoadInitialPercent,
     setRoadLeg,
     setRoadCharge,

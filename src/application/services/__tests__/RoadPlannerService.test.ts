@@ -51,9 +51,29 @@ describe('RoadPlannerService', () => {
       }),
     );
 
-    expect(result.labels.points[1]).toEqual({ arrival: '57%', charge: '24.5 kWh · €8.57' });
+    expect(result.labels.points[1]).toEqual({ arrival: '57%', charge: '24.5 kWh · CUR8.57' });
     expect(result.labels.points[2]?.arrival).toBe('79%');
-    expect(result.labels.totals).toBe('150 km · 25.5 kWh used · 24.5 kWh charged · €8.57');
+    expect(result.labels.totals).toBe('150 km · 25.5 kWh used · 24.5 kWh charged · CUR8.57');
+  });
+
+  it('prefixes prices with the user-chosen currency symbol', () => {
+    const result = service.estimate(
+      plainState({
+        currencySymbol: 'INR',
+        roadPlan: {
+          initialPercent: 80,
+          legs: [100, 50],
+          stops: [
+            { charging: true, chargeTo: 90 },
+            { charging: false, chargeTo: 100 },
+          ],
+          names: ['', '', ''],
+        },
+      }),
+    );
+
+    expect(result.labels.points[1]?.charge).toBe('24.5 kWh · INR8.57');
+    expect(result.labels.totals).toBe('150 km · 25.5 kWh used · 24.5 kWh charged · INR8.57');
   });
 
   it('shows N/A for the price when no rate is set', () => {

@@ -49,7 +49,7 @@ export function OutputSection({ state, result }: OutputSectionProps) {
           />
           <Row
             label={result.labels.chargeCost}
-            value={money(result.chargeCost)}
+            value={money(result.chargeCost, state.currencySymbol)}
             tone={result.chargeCost === null ? 'muted' : 'default'}
           />
           <Row
@@ -77,7 +77,7 @@ export function OutputSection({ state, result }: OutputSectionProps) {
               />
               <Row
                 label={result.labels.tripChargeCost}
-                value={money(result.tripChargeCost)}
+                value={money(result.tripChargeCost, state.currencySymbol)}
                 tone={result.tripChargeCost === null ? 'muted' : 'default'}
               />
             </>
@@ -94,9 +94,9 @@ export function OutputSection({ state, result }: OutputSectionProps) {
   );
 }
 
-/** `€12.92` for a priced session, `N/A` when no rate (or trip) is available. */
-function money(value: number | null): string {
-  return value === null ? NOT_AVAILABLE : formatCost(value);
+/** `CUR12.92` for a priced session, `N/A` when no rate (or trip) is available. */
+function money(value: number | null, currencySymbol?: string): string {
+  return value === null ? NOT_AVAILABLE : formatCost(value, currencySymbol);
 }
 
 type RowProps = {

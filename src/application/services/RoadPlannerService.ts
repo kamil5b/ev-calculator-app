@@ -21,7 +21,7 @@ export class RoadPlannerService {
     return {
       available: estimate.available,
       points: estimate.points,
-      labels: buildRoadPlanLabels(estimate, state.distanceUnit),
+      labels: buildRoadPlanLabels(estimate, state.distanceUnit, state.currencySymbol),
     };
   }
 }

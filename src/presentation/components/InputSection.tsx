@@ -4,7 +4,11 @@ import { fromFieldValue, Input, toFieldValue } from './common/Input';
 import { Slider } from './common/Slider';
 import { efficiencyPresets } from '../../infrastructure/config/models';
 import { efficiencyBounds, efficiencyUnitLabel } from '../../domain/entities/DistanceUnit';
-import { CURRENCY_SYMBOL } from '../../application/dto/CalculationResult';
+import {
+  resolveCurrencySymbol,
+  DEFAULT_CURRENCY_SYMBOL,
+  MAX_CURRENCY_SYMBOL_LENGTH,
+} from '../../domain/entities/BatteryState';
 import { ModelSelector } from './ModelSelector';
 import type { CarModel } from '../../domain/entities/CarModel';
 import type { CarModelDraftInput } from './ModelSelector';
@@ -19,6 +23,7 @@ export type InputSectionProps = {
   onMinBatteryChange: (value: number) => void;
   onEfficiencyChange: (value: number | null) => void;
   onElectricityRateChange: (value: number | null) => void;
+  onCurrencySymbolChange: (value: string) => void;
   onTripDistanceChange: (value: number | null) => void;
   onSelectCar: (id: string | null) => void;
   onAddCar: (draft: CarModelDraftInput) => boolean;
@@ -44,6 +49,7 @@ export function InputSection({
   onMinBatteryChange,
   onEfficiencyChange,
   onElectricityRateChange,
+  onCurrencySymbolChange,
   onTripDistanceChange,
   onSelectCar,
   onAddCar,
@@ -110,12 +116,22 @@ export function InputSection({
           />
 
           <Input
+            label="Currency symbol"
+            type="text"
+            value={state.currencySymbol}
+            placeholder={DEFAULT_CURRENCY_SYMBOL}
+            maxLength={MAX_CURRENCY_SYMBOL_LENGTH}
+            hint="Prefix for every price, e.g. €, USD, IDR"
+            onValueChange={onCurrencySymbolChange}
+          />
+
+          <Input
             label="Electricity price"
             type="number"
             inputMode="decimal"
             min={0}
             step={0.01}
-            unit={`${CURRENCY_SYMBOL}/kWh`}
+            unit={`${resolveCurrencySymbol(state.currencySymbol)}/kWh`}
             value={toFieldValue(state.electricityRate)}
             placeholder="0.35"
             error={errorFor('electricityRate')}

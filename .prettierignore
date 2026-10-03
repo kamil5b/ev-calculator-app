@@ -9,6 +9,3 @@ coverage/
 .DS_Store
 .vscode/
 .idea/
-
-# The specification document is not ours to reflow.
-PRD.md

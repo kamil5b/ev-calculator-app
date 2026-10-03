@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "private": true,
   "description": "Offline-first EV battery calculator PWA built with Astro, Preact and Clean Architecture.",
+  "license": "MIT",
   "engines": {
     "node": ">=22.12.0"
   },

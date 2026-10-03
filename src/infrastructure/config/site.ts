@@ -53,6 +53,9 @@ export const CAR_STORAGE_KEY = 'ev_calculator_cars';
 /** localStorage key remembering the last active car id. */
 export const ACTIVE_CAR_KEY = 'ev_calculator_active_car';
 
+/** localStorage key holding the user's saved road trips (PRD 11). */
+export const TRIP_STORAGE_KEY = 'ev_calculator_road_trips';
+
 /** Cache name used by the service worker (PRD 4.1). */
 export const CACHE_NAME = 'ev-calculator-v1';
 

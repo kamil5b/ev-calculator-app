@@ -5,6 +5,8 @@
  * quote the same limits and messages. Changing a limit is a single edit here.
  */
 
+import { MAX_TRIP_NAME_LENGTH } from './RoadTrip';
+
 /** Smallest usable capacity the calculator accepts, in kWh (PRD 8.1). */
 export const MIN_CAPACITY = 10;
 
@@ -35,6 +37,9 @@ export const VALIDATION_MESSAGES = {
   capacityRequired: 'Capacity is required',
   modelRequired: 'Model is required',
   carIdInvalid: 'That car no longer exists',
+  tripNameRequired: 'Trip name is required',
+  tripNameTooLong: `Trip name must be ${MAX_TRIP_NAME_LENGTH} characters or fewer`,
+  tripIdInvalid: 'That trip no longer exists',
 } as const;
 
 /** A single field-level validation failure, safe to render under an input. */

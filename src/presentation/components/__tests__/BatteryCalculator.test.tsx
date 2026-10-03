@@ -275,4 +275,43 @@ describe('BatteryCalculator', () => {
       expect(screen.queryByText('Coffee')).not.toBeInTheDocument();
     });
   });
+
+  describe('Saved trips', () => {
+    it('requires a name, then saves and loads the plan back', () => {
+      renderCalculator();
+
+      fireEvent.change(screen.getByLabelText(/distance from start/i), { target: { value: '100' } });
+      expect(screen.getByText('57%')).toBeInTheDocument();
+
+      // Saving without a name shows the inline error and stores nothing.
+      fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+      expect(screen.getByRole('alert')).toHaveTextContent('Trip name is required');
+
+      fireEvent.change(screen.getByLabelText('Trip name'), { target: { value: 'Weekend' } });
+      fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+      expect(screen.getByText('Weekend')).toBeInTheDocument();
+
+      // Edit the plan, then load the saved trip to restore it.
+      fireEvent.change(screen.getByLabelText(/distance from start/i), { target: { value: '50' } });
+      fireEvent.click(screen.getByRole('button', { name: 'Load Weekend' }));
+      expect(screen.getByLabelText(/distance from start/i)).toHaveValue(100);
+    });
+
+    it('updates a saved trip with the current plan', () => {
+      renderCalculator();
+
+      fireEvent.change(screen.getByLabelText(/distance from start/i), { target: { value: '100' } });
+      fireEvent.change(screen.getByLabelText('Trip name'), { target: { value: 'Commute' } });
+      fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+      // Change the plan and overwrite the stored trip.
+      fireEvent.change(screen.getByLabelText(/distance from start/i), { target: { value: '50' } });
+      fireEvent.click(screen.getByRole('button', { name: 'Update Commute' }));
+
+      // Editing again and loading must reveal the updated (50 km) plan.
+      fireEvent.change(screen.getByLabelText(/distance from start/i), { target: { value: '25' } });
+      fireEvent.click(screen.getByRole('button', { name: 'Load Commute' }));
+      expect(screen.getByLabelText(/distance from start/i)).toHaveValue(50);
+    });
+  });
 });

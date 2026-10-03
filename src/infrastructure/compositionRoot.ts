@@ -1,7 +1,9 @@
 import { BatteryCalculationService } from '../application/services/BatteryCalculationService';
 import { CarModelService } from '../application/services/CarModelService';
 import { PersistenceService } from '../application/services/PersistenceService';
+import { RoadTripService } from '../application/services/RoadTripService';
 import { CarModelRepository } from './repositories/CarModelRepository';
+import { RoadTripRepository } from './repositories/RoadTripRepository';
 import { createDefaultStorage, type StoragePort } from './storage/LocalStorageAdapter';
 
 /** The object graph handed to the UI. */
@@ -9,6 +11,7 @@ export interface Container {
   readonly calculations: BatteryCalculationService;
   readonly persistence: PersistenceService;
   readonly cars: CarModelService;
+  readonly trips: RoadTripService;
   /** `false` when `localStorage` is unavailable and state is memory-only. */
   readonly storageAvailable: boolean;
 }
@@ -23,6 +26,7 @@ export function createContainer(storage: StoragePort = createDefaultStorage()): 
     calculations: new BatteryCalculationService(),
     persistence: new PersistenceService(storage),
     cars: new CarModelService(new CarModelRepository(storage)),
+    trips: new RoadTripService(new RoadTripRepository(storage)),
     storageAvailable: (storage as { isAvailable?: boolean }).isAvailable ?? true,
   };
 }

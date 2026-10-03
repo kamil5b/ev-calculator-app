@@ -11,6 +11,8 @@ import { clampPercent } from '../../domain/use-cases/math';
 import { switchDistanceUnit } from '../../domain/use-cases/SwitchDistanceUnit';
 import type { DistanceUnit } from '../../domain/entities/DistanceUnit';
 import { MAX_POINT_NAME_LENGTH, MAX_ROAD_STOPS, type RoadPlan } from '../../domain/entities/RoadPlan';
+import type { RoadTrip } from '../../domain/entities/RoadTrip';
+import { convertDistance } from '../../domain/entities/DistanceUnit';
 import { roadPlannerService } from '../../application/services/RoadPlannerService';
 import type { RoadPlanResult } from '../../application/dto/RoadPlanResult';
 
@@ -25,6 +27,8 @@ export interface UseCalculator {
   readonly hydrated: boolean;
   /** Derived road planner output, recomputed on every render like `result`. */
   readonly roadPlanResult: RoadPlanResult;
+  /** Saved road trips, newest first. */
+  readonly savedTrips: RoadTrip[];
   setCapacity: (value: number) => void;
   setCurrentBattery: (value: number) => void;
   setTargetBattery: (value: number) => void;
@@ -40,6 +44,9 @@ export interface UseCalculator {
   setRoadPointName: (pointIndex: number, name: string) => void;
   addRoadStop: () => void;
   removeRoadStop: (index: number) => void;
+  saveRoadTrip: (name: string) => boolean;
+  loadRoadTrip: (id: string) => void;
+  updateRoadTrip: (id: string) => boolean;
   selectCar: (id: string | null) => void;
   addCar: (draft: { model: string; name?: string; capacity: number }) => boolean;
   updateCar: (id: string, draft: { model: string; name?: string; capacity: number }) => boolean;
@@ -68,10 +75,12 @@ export function useCalculator(storage?: StoragePort): UseCalculator {
 
   const container = containerRef.current;
   const carsService = container.cars;
+  const tripsService = container.trips;
   const persistence = container.persistence;
 
   const [state, setState] = useState<BatteryState>({ ...DEFAULT_BATTERY_STATE });
   const [cars, setCars] = useState<CarModel[]>([]);
+  const [savedTrips, setSavedTrips] = useState<RoadTrip[]>([]);
   const [storageAvailable, setStorageAvailable] = useState(container.storageAvailable);
   const [hydrated, setHydrated] = useState(false);
 
@@ -87,8 +96,9 @@ export function useCalculator(storage?: StoragePort): UseCalculator {
         : { ...restored, carId: activeCar.id, totalCapacity: activeCar.capacity },
     );
     setCars(registeredCars);
+    setSavedTrips(tripsService.list());
     setHydrated(true);
-  }, [carsService, persistence]);
+  }, [carsService, tripsService, persistence]);
 
   /**
    * Persists every state change once hydration has finished.
@@ -244,6 +254,56 @@ export function useCalculator(storage?: StoragePort): UseCalculator {
     });
   }, []);
 
+  /** Saves the current plan under a required, user-chosen name. */
+  const saveRoadTrip = useCallback(
+    (name: string): boolean => {
+      const outcome = tripsService.add({
+        name,
+        plan: state.roadPlan,
+        distanceUnit: state.distanceUnit,
+      });
+      if (!outcome.ok) return false;
+      setSavedTrips(tripsService.list());
+      return true;
+    },
+    [tripsService, state.roadPlan, state.distanceUnit],
+  );
+
+  /** Replaces the current plan with a stored one, converting legs to the active unit. */
+  const loadRoadTrip = useCallback(
+    (id: string): void => {
+      const trip = tripsService.getById(id);
+      if (trip === null) return;
+
+      setState((previous) => ({
+        ...previous,
+        roadPlan: {
+          ...trip.plan,
+          legs: trip.plan.legs.map((leg) =>
+            leg === null || trip.distanceUnit === previous.distanceUnit
+              ? leg
+              : convertDistance(leg, trip.distanceUnit, previous.distanceUnit),
+          ),
+        },
+      }));
+    },
+    [tripsService],
+  );
+
+  /** Overwrites a stored trip with the current plan (name and id preserved). */
+  const updateRoadTrip = useCallback(
+    (id: string): boolean => {
+      const outcome = tripsService.update(id, {
+        plan: state.roadPlan,
+        distanceUnit: state.distanceUnit,
+      });
+      if (!outcome.ok) return false;
+      setSavedTrips(tripsService.list());
+      return true;
+    },
+    [tripsService, state.roadPlan, state.distanceUnit],
+  );
+
   const selectCar = useCallback(
     (id: string | null) => {
       carsService.setActiveId(id);
@@ -322,6 +382,7 @@ export function useCalculator(storage?: StoragePort): UseCalculator {
     storageAvailable,
     hydrated,
     roadPlanResult,
+    savedTrips,
     setCapacity,
     setCurrentBattery,
     setTargetBattery,
@@ -337,6 +398,9 @@ export function useCalculator(storage?: StoragePort): UseCalculator {
     setRoadPointName,
     addRoadStop,
     removeRoadStop,
+    saveRoadTrip,
+    loadRoadTrip,
+    updateRoadTrip,
     selectCar,
     addCar,
     updateCar,

@@ -3,6 +3,7 @@ import { useInstallPrompt } from '../hooks/useInstallPrompt';
 import { InputSection } from './InputSection';
 import { OutputSection } from './OutputSection';
 import { RoadPlannerSection } from './RoadPlannerSection';
+import { SavedTripsSection } from './SavedTripsSection';
 import { UnitToggle } from './UnitToggle';
 import { Button } from './common/Button';
 import { Badge } from './common/Badge';
@@ -80,6 +81,13 @@ export function BatteryCalculator({ storage }: BatteryCalculatorProps) {
           onPointNameChange={calculator.setRoadPointName}
           onAddStop={calculator.addRoadStop}
           onRemoveStop={calculator.removeRoadStop}
+        />
+
+        <SavedTripsSection
+          trips={calculator.savedTrips}
+          onSave={calculator.saveRoadTrip}
+          onLoad={calculator.loadRoadTrip}
+          onUpdate={calculator.updateRoadTrip}
         />
       </main>
 

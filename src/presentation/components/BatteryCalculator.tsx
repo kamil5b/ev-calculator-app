@@ -2,8 +2,6 @@ import { useCalculator } from '../hooks/useCalculator';
 import { useInstallPrompt } from '../hooks/useInstallPrompt';
 import { InputSection } from './InputSection';
 import { OutputSection } from './OutputSection';
-import { TripSection } from './TripSection';
-import { CostSection } from './CostSection';
 import { UnitToggle } from './UnitToggle';
 import { Button } from './common/Button';
 import { Badge } from './common/Badge';
@@ -60,6 +58,8 @@ export function BatteryCalculator({ storage }: BatteryCalculatorProps) {
           onTargetBatteryChange={calculator.setTargetBattery}
           onMinBatteryChange={calculator.setMinBattery}
           onEfficiencyChange={calculator.setEfficiency}
+          onElectricityRateChange={calculator.setElectricityRate}
+          onTripDistanceChange={calculator.setTripDistance}
           onSelectCar={calculator.selectCar}
           onAddCar={calculator.addCar}
           onUpdateCar={calculator.updateCar}
@@ -67,20 +67,6 @@ export function BatteryCalculator({ storage }: BatteryCalculatorProps) {
         />
 
         <OutputSection state={calculator.state} result={calculator.result} />
-
-        <CostSection
-          state={calculator.state}
-          result={calculator.result}
-          errorFor={calculator.errorFor}
-          onElectricityRateChange={calculator.setElectricityRate}
-        />
-
-        <TripSection
-          state={calculator.state}
-          result={calculator.result}
-          errorFor={calculator.errorFor}
-          onTripDistanceChange={calculator.setTripDistance}
-        />
       </main>
 
       <footer class="flex items-center justify-between gap-3">

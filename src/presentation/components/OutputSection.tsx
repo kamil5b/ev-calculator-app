@@ -13,7 +13,8 @@ export type OutputSectionProps = {
 };
 
 /**
- * Live calculation output (PRD 2.2).
+ * Live calculation output (PRD 2.2), including the Phase 2 trip and price
+ * answers so every number lives in a single card.
  *
  * Renders the pre-formatted strings produced by `BatteryCalculationService` so
  * no arithmetic or rounding leaks into the view. `aria-live="polite"` announces
@@ -25,6 +26,8 @@ export function OutputSection({ state, result }: OutputSectionProps) {
   const rangeUnavailable = result.range === null;
   const unit = result.distanceUnit;
   const bounds = efficiencyBounds(unit);
+  const hasTrip = result.labels.arrival !== null && result.labels.chargeAtTarget !== null;
+  const tripWarn = !result.trip?.isReachable;
 
   return (
     <Card aria-labelledby="output-heading">
@@ -54,7 +57,28 @@ export function OutputSection({ state, result }: OutputSectionProps) {
             value={result.fullRange === null ? 'N/A' : `${result.fullRange} ${unit}`}
             tone={result.fullRange === null ? 'muted' : 'default'}
           />
+          {hasTrip && (
+            <>
+              <Row
+                label="Battery on arrival"
+                value={result.labels.arrival ?? ''}
+                tone={tripWarn ? 'warning' : 'default'}
+              />
+              <Row
+                label="Charge at target"
+                value={result.labels.chargeAtTarget ?? ''}
+                tone={tripWarn ? 'warning' : 'default'}
+              />
+            </>
+          )}
         </dl>
+
+        <p
+          class={`text-base font-medium tabular-nums ${result.chargeCost === null ? 'text-slate-400' : 'text-slate-900'}`}
+          aria-live="polite"
+        >
+          {result.labels.chargeCost}
+        </p>
 
         <p class="text-xs text-slate-500">
           {result.range === null
@@ -70,7 +94,7 @@ type RowProps = {
   label: string;
   value: string;
   emphasis?: boolean;
-  tone?: 'default' | 'muted' | 'positive' | 'neutral';
+  tone?: 'default' | 'muted' | 'positive' | 'neutral' | 'warning';
 };
 
 function Row({ label, value, emphasis = false, tone = 'default' }: RowProps) {
@@ -79,6 +103,7 @@ function Row({ label, value, emphasis = false, tone = 'default' }: RowProps) {
     muted: 'text-slate-400',
     positive: 'text-emerald-700',
     neutral: 'text-slate-900',
+    warning: 'text-red-600',
   }[tone];
 
   return (

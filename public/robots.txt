@@ -1,5 +1,0 @@
-User-agent: *
-Allow: /
-
-# Nothing here is user-specific, but the whole app is a client-side island:
-# crawlers get the statically rendered shell only.

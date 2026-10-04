@@ -4,8 +4,16 @@ import {
   APPLE_TOUCH_ICON,
   BASE_PATH,
   FAVICON,
+  OG_IMAGE,
   PWA_MANIFEST,
+  SITE_CANONICAL,
+  SITE_DESCRIPTION,
+  SITE_KEYWORDS,
+  SITE_NAME,
+  SITE_TITLE,
+  SEO_JSON_LD,
   THEME_COLOR,
+  SITE_URL,
 } from '../infrastructure/config/site';
 
 type Props = {
@@ -13,10 +21,9 @@ type Props = {
   description?: string;
 };
 
-const {
-  title = 'EV Battery Calculator',
-  description = 'Calculate EV battery metrics offline: remaining range, charge needed and usable pack energy. Private, offline-first, no account.',
-} = Astro.props;
+const { title = SITE_TITLE, description = SITE_DESCRIPTION } = Astro.props;
+
+const ogImage = new URL(OG_IMAGE, SITE_URL).href;
 ---
 
 <!doctype html>
@@ -26,6 +33,26 @@ const {
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>{title}</title>
     <meta name="description" content={description} />
+    <meta name="keywords" content={SITE_KEYWORDS} />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href={SITE_CANONICAL} />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={SITE_NAME} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={SITE_CANONICAL} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content="512" />
+    <meta property="og:image:height" content="512" />
+    <meta property="og:image:alt" content="EV Calculator app icon" />
+    <meta property="og:locale" content="en_US" />
+
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage} />
+    <meta name="twitter:image:alt" content="EV Calculator app icon" />
 
     <meta name="theme-color" content={THEME_COLOR} />
     <meta name="color-scheme" content="light" />
@@ -36,6 +63,10 @@ const {
     <meta name="apple-mobile-web-app-title" content={PWA_MANIFEST.short_name} />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="referrer" content="no-referrer" />
+
+    {/* Structured data; `is:inline` keeps Astro from bundling it, and the CSP
+        hash for these exact bytes is added in `astro.config.mjs`. */}
+    <script type="application/ld+json" is:inline set:html={SEO_JSON_LD} />
   </head>
 
   <body>

@@ -1,10 +1,20 @@
 // @ts-check
+import { createHash } from 'node:crypto';
 import { defineConfig } from 'astro/config';
 import preact from '@astrojs/preact';
 import tailwindcss from '@tailwindcss/vite';
 
-import { SITE_URL, BASE_PATH } from './src/infrastructure/config/site.js';
+import { SITE_URL, BASE_PATH, SEO_JSON_LD } from './src/infrastructure/config/site.js';
 import { providerOrigins } from './src/infrastructure/config/providers.js';
+
+/**
+ * SHA-256 of the inline JSON-LD block rendered by `Layout.astro`. Both files
+ * read the same `SEO_JSON_LD` string, so the hash always matches the bytes —
+ * without it `script-src` would strip the structured data Google reads.
+ * Astro quotes the token itself when it emits the directive.
+ * @type {`sha256-${string}`}
+ */
+const jsonLdHash = `sha256-${createHash('sha256').update(SEO_JSON_LD, 'utf8').digest('base64')}`;
 
 /**
  * GitHub Pages serves a project site from a sub-path (the repository name), so
@@ -71,6 +81,7 @@ export default defineConfig({
       ],
       scriptDirective: {
         resources: ["'self'", "'wasm-unsafe-eval'"],
+        hashes: [{ hash: jsonLdHash, kind: 'default' }],
       },
       // `style-src-attr` fully overrides `style-src` for its scope, so both
       // sources are declared explicitly per kind rather than relying on a

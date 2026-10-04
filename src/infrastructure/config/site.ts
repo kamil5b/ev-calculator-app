@@ -44,6 +44,56 @@ export const BASE_PATH: string = (() => {
  */
 const BASE_PREFIX = BASE_PATH.replace(/\/+$/, '');
 
+/** Absolute canonical URL of the single page — canonical, og:url and JSON-LD share it. */
+export const SITE_CANONICAL: string = new URL(BASE_PATH === '/' ? '/' : `${BASE_PATH}/`, SITE_URL).href;
+
+/* ── SEO (title, social cards, structured data) ──────────────────────────── */
+
+/** Document title; hits all three headline tools (calculator, road trip, road planner). */
+export const SITE_TITLE = 'EV Calculator — Battery, Road Trip & Road Planner';
+
+/** Meta description, kept under 160 characters for search snippets. */
+export const SITE_DESCRIPTION =
+  'EV calculator for range, charge, cost and efficiency. Plan an EV road trip with the road planner: real places, distances and charging stops. Works offline.';
+
+/** `og:site_name` / `twitter:site`-style site label. */
+export const SITE_NAME = 'EV Calculator';
+
+/** `meta keywords` — the terms this app targets. */
+export const SITE_KEYWORDS =
+  'EV calculator, EV road trip, EV road planner, EV battery calculator, EV range, EV charging stops, offline EV tools';
+
+/**
+ * Social share image. No dedicated 1200×630 card ships yet, so the 512×512
+ * app icon is reused — a valid square `og:image` beats having none.
+ */
+export const OG_IMAGE = `${BASE_PREFIX}/icons/icon-512.png`;
+
+/**
+ * JSON-LD `WebApplication` structured data, serialised to a string so
+ * `Layout.astro` and `astro.config.mjs` render and hash the exact same bytes
+ * (the CSP `script-src` hash is computed from this value at build time).
+ */
+export const SEO_JSON_LD: string = JSON.stringify(
+  {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: SITE_TITLE,
+    alternateName: 'EV Battery Calculator',
+    url: SITE_CANONICAL,
+    description: SITE_DESCRIPTION,
+    applicationCategory: 'UtilitiesApplication',
+    operatingSystem: 'Any',
+    browserRequirements: 'Requires JavaScript',
+    inLanguage: 'en',
+    isAccessibleForFree: true,
+    offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+    featureList: 'EV battery calculator, EV road trip planner, EV road planner',
+  },
+  null,
+  2,
+);
+
 /** localStorage key holding the serialised calculator state (PRD 2.3). */
 export const STORAGE_KEY = 'ev_calculator_state';
 
@@ -67,9 +117,9 @@ export const THEME_COLOR = '#0f172a';
 
 /** PWA manifest configuration (PRD 4.2). */
 export const PWA_MANIFEST = {
-  name: 'EV Battery Calculator',
+  name: 'EV Battery Calculator & Road Trip Planner',
   short_name: 'EV Calc',
-  description: 'Calculate EV battery metrics offline',
+  description: 'EV battery calculator, road trip and road planner — works offline',
   start_url: `${BASE_PREFIX}/`,
   scope: `${BASE_PREFIX}/`,
   display: 'standalone',

@@ -56,6 +56,9 @@ export const ACTIVE_CAR_KEY = 'ev_calculator_active_car';
 /** localStorage key holding the user's saved road trips (PRD 11). */
 export const TRIP_STORAGE_KEY = 'ev_calculator_road_trips';
 
+/** localStorage key holding the cached geocoder results (ACTUAL_PLACE_PLANNING §2). */
+export const PLACES_CACHE_KEY = 'ev_calculator_places';
+
 /** Cache name used by the service worker (PRD 4.1). */
 export const CACHE_NAME = 'ev-calculator-v1';
 

@@ -19,7 +19,16 @@ import { MAX_POINT_NAME_LENGTH, MAX_ROAD_STOPS, type RoadPlan } from '../../doma
 import type { RoadTrip } from '../../domain/entities/RoadTrip';
 import { convertDistance } from '../../domain/entities/DistanceUnit';
 import { roadPlannerService } from '../../application/services/RoadPlannerService';
+import { RoutePlannerService } from '../../application/services/RoutePlannerService';
 import type { RoadPlanResult } from '../../application/dto/RoadPlanResult';
+import type { Place } from '../../domain/entities/Place';
+import { useOnlineStatus } from './useOnlineStatus';
+
+/** Search outcome the card renders (results list or an inline error). */
+export interface PlaceSearchOutcome {
+  readonly places: Place[];
+  readonly error: string | null;
+}
 
 /** What {@link useCalculator} hands to the components. */
 export interface UseCalculator {
@@ -55,6 +64,20 @@ export interface UseCalculator {
   updateRoadTrip: (id: string) => boolean;
   removeRoadTrip: (id: string) => boolean;
   resetRoadPlan: () => void;
+  /** "Plan with actual place" mode is on (ACTUAL_PLACE_PLANNING §5). */
+  readonly placeMode: boolean;
+  /** Draft picks, index-aligned with the points; `null` = not picked yet. */
+  readonly places: readonly (Place | null)[];
+  /** `true` while `finishActualPlanning` is in flight (no double submit). */
+  readonly placePlanning: boolean;
+  /** Last finish error, cleared on the next attempt / cancel. */
+  readonly placeError: string | null;
+  togglePlaceMode: () => void;
+  setRoadPlace: (pointIndex: number, place: Place | null) => void;
+  clearRoadPlace: (pointIndex: number) => void;
+  searchRoadPlaces: (query: string) => Promise<PlaceSearchOutcome>;
+  finishActualPlanning: () => Promise<boolean>;
+  cancelPlacePlanning: () => void;
   selectCar: (id: string | null) => void;
   addCar: (draft: { model: string; name?: string; capacity: number }) => boolean;
   updateCar: (id: string, draft: { model: string; name?: string; capacity: number }) => boolean;
@@ -85,12 +108,29 @@ export function useCalculator(storage?: StoragePort): UseCalculator {
   const carsService = container.cars;
   const tripsService = container.trips;
   const persistence = container.persistence;
+  const routePlanner = container.routePlanner;
 
   const [state, setState] = useState<BatteryState>({ ...DEFAULT_BATTERY_STATE });
   const [cars, setCars] = useState<CarModel[]>([]);
   const [savedTrips, setSavedTrips] = useState<RoadTrip[]>([]);
   const [storageAvailable, setStorageAvailable] = useState(container.storageAvailable);
   const [hydrated, setHydrated] = useState(false);
+
+  // "Plan with actual place" mode (ACTUAL_PLACE_PLANNING §5): deliberately NOT
+  // part of BatteryState, so it is never persisted — a half-finished plan
+  // dies with the tab, while the road plan itself is untouched until "Done".
+  const [placeMode, setPlaceMode] = useState(false);
+  const [places, setPlaces] = useState<(Place | null)[]>([]);
+  const [placePlanning, setPlacePlanning] = useState(false);
+  const [placeError, setPlaceError] = useState<string | null>(null);
+
+  /** Leaves mode and drops every draft place; the road plan is never touched. */
+  const cancelPlacePlanning = useCallback(() => {
+    setPlaceMode(false);
+    setPlaces([]);
+    setPlaceError(null);
+    setPlacePlanning(false);
+  }, []);
 
   useEffect(() => {
     const restored = persistence.load();
@@ -252,6 +292,13 @@ export function useCalculator(storage?: StoragePort): UseCalculator {
         },
       };
     });
+    // Keep the draft places index-aligned: the new point (always the one just
+    // before the end) starts unpicked.
+    setPlaces((previous) =>
+      previous.length === 0
+        ? previous
+        : [...previous.slice(0, previous.length - 1), null, previous[previous.length - 1] ?? null],
+    );
   }, []);
 
   /** Removes waypoint `index` (its leg index); the start/end are untouchable. */
@@ -273,6 +320,8 @@ export function useCalculator(storage?: StoragePort): UseCalculator {
         },
       };
     });
+    // Mirror the removal in the draft places (point `index + 1` is dropped).
+    setPlaces((previous) => previous.filter((_, pointIndex) => pointIndex !== index + 1));
   }, []);
 
   /** Saves the current plan under a required, user-chosen name. */
@@ -296,6 +345,9 @@ export function useCalculator(storage?: StoragePort): UseCalculator {
       const trip = tripsService.getById(id);
       if (trip === null) return;
 
+      // The draft places belong to the plan being replaced.
+      cancelPlacePlanning();
+
       setState((previous) => ({
         ...previous,
         roadPlan: {
@@ -308,7 +360,7 @@ export function useCalculator(storage?: StoragePort): UseCalculator {
         },
       }));
     },
-    [tripsService],
+    [tripsService, cancelPlacePlanning],
   );
 
   /** Overwrites a stored trip with the current plan (name and id preserved). */
@@ -337,6 +389,8 @@ export function useCalculator(storage?: StoragePort): UseCalculator {
 
   /** Restores the planner to the first-run plan; saved trips are untouched. */
   const resetRoadPlan = useCallback(() => {
+    // The draft places belong to the plan being discarded.
+    cancelPlacePlanning();
     setState((previous) => ({
       ...previous,
       roadPlan: {
@@ -346,7 +400,87 @@ export function useCalculator(storage?: StoragePort): UseCalculator {
         names: [...DEFAULT_ROAD_PLAN.names],
       },
     }));
+  }, [cancelPlacePlanning]);
+
+  // --- "Plan with actual place" (ACTUAL_PLACE_PLANNING §5) -----------------
+
+  /** Enter mode with one unpicked slot per point, or leave via cancel. */
+  const togglePlaceMode = useCallback(() => {
+    if (placeMode) {
+      cancelPlacePlanning();
+      return;
+    }
+    setPlaces(Array.from({ length: state.roadPlan.legs.length + 1 }, () => null));
+    setPlaceError(null);
+    setPlaceMode(true);
+  }, [placeMode, state.roadPlan.legs.length, cancelPlacePlanning]);
+
+  /** Records (or, with `null`, clears) the picked place for one point. */
+  const setRoadPlace = useCallback((pointIndex: number, place: Place | null) => {
+    setPlaces((previous) => previous.map((entry, index) => (index === pointIndex ? place : entry)));
   }, []);
+
+  const clearRoadPlace = useCallback((pointIndex: number) => setRoadPlace(pointIndex, null), [setRoadPlace]);
+
+  /** Geocodes `query` (cache first); never throws — errors come back mapped. */
+  const searchRoadPlaces = useCallback(
+    async (query: string): Promise<PlaceSearchOutcome> => {
+      try {
+        return { places: await routePlanner.searchPlaces(query), error: null };
+      } catch (error) {
+        return { places: [], error: RoutePlannerService.errorMessage(error) };
+      }
+    },
+    [routePlanner],
+  );
+
+  /**
+   * The single `getLegs` call: writes the legs into the plan, adopts the
+   * place names, and exits mode — from there the plan is the ordinary,
+   * editable road plan again. `false` = nothing changed.
+   */
+  const finishActualPlanning = useCallback(async (): Promise<boolean> => {
+    if (!placeMode || placePlanning) return false;
+    if (places.length < 2 || places.some((entry) => entry === null)) return false;
+
+    const stops = places as Place[];
+    setPlacePlanning(true);
+    setPlaceError(null);
+
+    try {
+      const result = await routePlanner.planRoute(stops, state.distanceUnit);
+
+      setState((previous) => ({
+        ...previous,
+        roadPlan: {
+          ...previous.roadPlan,
+          legs: result.legs.map((leg) => leg.km),
+          names: Array.from({ length: stops.length }, (_, pointIndex) =>
+            (stops[pointIndex]?.name ?? previous.roadPlan.names[pointIndex] ?? '').slice(
+              0,
+              MAX_POINT_NAME_LENGTH,
+            ),
+          ),
+        },
+      }));
+
+      setPlaceMode(false);
+      setPlaces([]);
+      return true;
+    } catch (error) {
+      setPlaceError(RoutePlannerService.errorMessage(error));
+      return false;
+    } finally {
+      setPlacePlanning(false);
+    }
+  }, [placeMode, placePlanning, places, routePlanner, state.distanceUnit]);
+
+  // Online-only feature: losing the connection mid-mode cancels it, so the
+  // user is never stuck in a mode whose controls have just been hidden.
+  const online = useOnlineStatus();
+  useEffect(() => {
+    if (!online) cancelPlacePlanning();
+  }, [online, cancelPlacePlanning]);
 
   const selectCar = useCallback(
     (id: string | null) => {
@@ -448,6 +582,16 @@ export function useCalculator(storage?: StoragePort): UseCalculator {
     updateRoadTrip,
     removeRoadTrip,
     resetRoadPlan,
+    placeMode,
+    places,
+    placePlanning,
+    placeError,
+    togglePlaceMode,
+    setRoadPlace,
+    clearRoadPlace,
+    searchRoadPlaces,
+    finishActualPlanning,
+    cancelPlacePlanning,
     selectCar,
     addCar,
     updateCar,

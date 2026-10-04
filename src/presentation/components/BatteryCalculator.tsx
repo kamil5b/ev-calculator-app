@@ -75,6 +75,10 @@ export function BatteryCalculator({ storage }: BatteryCalculatorProps) {
           result={calculator.roadPlanResult}
           errorFor={calculator.errorFor}
           trips={calculator.savedTrips}
+          placeMode={calculator.placeMode}
+          places={calculator.places}
+          placePlanning={calculator.placePlanning}
+          placeError={calculator.placeError}
           onInitialPercentChange={calculator.setRoadInitialPercent}
           onLegChange={calculator.setRoadLeg}
           onChargeToggle={calculator.setRoadCharge}
@@ -87,6 +91,12 @@ export function BatteryCalculator({ storage }: BatteryCalculatorProps) {
           onUpdateTrip={calculator.updateRoadTrip}
           onRemoveTrip={calculator.removeRoadTrip}
           onReset={calculator.resetRoadPlan}
+          onTogglePlaceMode={calculator.togglePlaceMode}
+          onSearchPlaces={calculator.searchRoadPlaces}
+          onPlacePick={calculator.setRoadPlace}
+          onPlaceClear={calculator.clearRoadPlace}
+          onFinishPlanning={calculator.finishActualPlanning}
+          onCancelPlanning={calculator.cancelPlacePlanning}
         />
       </main>
 
@@ -101,6 +111,20 @@ export function BatteryCalculator({ storage }: BatteryCalculatorProps) {
         </div>
         <p class="text-xs text-slate-500">Works fully offline</p>
       </footer>
+
+      {/* Route-planner credits (ACTUAL_PLACE_PLANNING §8); update on provider swap. */}
+      <p class="text-xs text-slate-500">
+        ©{' '}
+        <a
+          href="https://www.openstreetmap.org/copyright"
+          target="_blank"
+          rel="noreferrer"
+          class="underline hover:text-slate-700"
+        >
+          OpenStreetMap contributors
+        </a>{' '}
+        · Routing by OSRM
+      </p>
     </div>
   );
 }

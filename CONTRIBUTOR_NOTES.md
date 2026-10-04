@@ -48,7 +48,8 @@ npm run preview        # serve dist/ exactly as production serves it
 ```
 
 `npm run build` runs `scripts/check-budget.mjs` automatically and fails the build if
-gzipped critical-path JS exceeds 20 KB or CSS exceeds 10 KB.
+gzipped critical-path JS or CSS exceeds 1 MB each (raised from 20 KB / 10 KB so the
+online "plan with actual place" feature fits — see `docs/ACTUAL_PLACE_PLANNING.md`).
 
 > **Base path.** The dev server and `preview` both mount the app at `/ev-calculator-app/`
 > (GitHub Pages project-site path). See [Configuration](#configuration).
@@ -123,7 +124,7 @@ in isolation — every edge case is pinned by a test in
   Astro 7. The service worker is hand-written (`public/sw.js`), with the manifest
   served from `src/pages/manifest.webmanifest.ts` so `BASE_PATH` resolves at build time.
 - **No `tailwind-merge`.** `cn()` is a thin `clsx` wrapper; dropping `tailwind-merge`
-  keeps ~14 KB gzip out of the bundle, comfortably inside the 20 KB critical-path
+  keeps ~14 KB gzip out of the bundle, well inside the 1 MB critical-path
   budget.
 - **Content-Security-Policy** is emitted by Astro's stable `security.csp` option using
   SHA-256 hashes for the inline island bootstrap scripts. Shiki is disabled
@@ -139,12 +140,20 @@ in isolation — every edge case is pinned by a test in
 
 ## Configuration
 
-Read from the environment at build time (see `src/infrastructure/config/site.ts`):
+Read from the environment at build time (see `src/infrastructure/config/site.ts`;
+provider base URLs live in `src/infrastructure/config/providers.ts` once the
+route-planner feature lands — see `docs/ACTUAL_PLACE_PLANNING.md`). All
+provider vars are optional: unset means the public endpoints
+(`nominatim.openstreetmap.org`, `router.project-osrm.org`):
 
-| Variable    | Default                     | Meaning                                |
-| ----------- | --------------------------- | -------------------------------------- |
-| `SITE_URL`  | `https://kamil5b.github.io` | Public origin, used for canonical URLs |
-| `BASE_PATH` | `/ev-calculator-app`        | Sub-path the app is served from        |
+| Variable             | Default                               | Meaning                                                                                  |
+| -------------------- | ------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `SITE_URL`           | `https://kamil5b.github.io`           | Public origin, used for canonical URLs                                                   |
+| `BASE_PATH`          | `/ev-calculator-app`                  | Sub-path the app is served from                                                          |
+| `GEOCODER_PROVIDER`  | `nominatim`                           | Geocoder adapter; only built-in value ships — see `docs/ADDING_A_PROVIDER.md`            |
+| `NOMINATIM_BASE_URL` | `https://nominatim.openstreetmap.org` | Geocoder base URL; point at your own Nominatim (see `docs/ACTUAL_PLACE_PLANNING.md` §11) |
+| `ROUTING_PROVIDER`   | `osrm`                                | Routing adapter; only built-in value ships — see `docs/ADDING_A_PROVIDER.md`             |
+| `OSRM_BASE_URL`      | `https://router.project-osrm.org`     | OSRM base URL; point at your own OSRM (see `docs/ACTUAL_PLACE_PLANNING.md` §11)          |
 
 ```bash
 # Custom domain (app served from the root)
@@ -152,6 +161,9 @@ SITE_URL=https://ev.example.com BASE_PATH= npm run build
 
 # Renamed repository
 BASE_PATH=/my-fork npm run build
+
+# Self-hosted geocoder + router (docker compose in selfhost/)
+NOMINATIM_BASE_URL=http://localhost:8080 OSRM_BASE_URL=http://localhost:5000 npm run build
 ```
 
 Both must be set together for a correct publish — the manifest's `start_url`/`scope`,

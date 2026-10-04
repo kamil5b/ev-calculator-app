@@ -40,6 +40,13 @@ export const VALIDATION_MESSAGES = {
   tripNameRequired: 'Trip name is required',
   tripNameTooLong: `Trip name must be ${MAX_TRIP_NAME_LENGTH} characters or fewer`,
   tripIdInvalid: 'That trip no longer exists',
+  /** "Plan with actual place" provider failures (ACTUAL_PLACE_PLANNING §7). */
+  routeNoRoute: 'No route found between these places',
+  routeRateLimit: 'Too many requests — wait a moment and try again',
+  routeNetwork: 'No connection — check your network and try again',
+  searchNoResults: 'No results',
+  searchFailed: 'Search failed — check your connection and try again',
+  needsPlaces: 'Pick a place for every point first',
 } as const;
 
 /** A single field-level validation failure, safe to render under an input. */

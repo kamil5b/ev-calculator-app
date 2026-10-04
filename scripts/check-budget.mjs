@@ -15,10 +15,16 @@ import { fileURLToPath } from 'node:url';
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const distDir = join(projectRoot, 'dist');
 
-/** Gzipped byte ceilings from PRD 9. */
+/**
+ * Gzipped byte ceilings.
+ *
+ * Originally 20 KB JS / 10 KB CSS (PRD 9); raised to 1 MB each so the
+ * online "plan with actual place" feature (geocoder + routing providers)
+ * fits without gutting the check.
+ */
 const BUDGETS = {
-  js: 20 * 1024,
-  css: 10 * 1024,
+  js: 1024 * 1024,
+  css: 1024 * 1024,
 };
 
 /** Files the first paint does not need; excluded from the totals. */

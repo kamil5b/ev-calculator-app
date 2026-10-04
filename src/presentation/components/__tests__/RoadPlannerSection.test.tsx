@@ -119,6 +119,18 @@ describe('RoadPlannerSection — place mode', () => {
     renderSection({ placeMode: true, placeError: VALIDATION_MESSAGES.routeNetwork });
     expect(screen.getByRole('alert')).toHaveTextContent(VALIDATION_MESSAGES.routeNetwork);
   });
+
+  it('hides the OSM credits outside place mode', () => {
+    renderSection();
+    expect(screen.queryByText(/openstreetmap contributors/i)).not.toBeInTheDocument();
+  });
+
+  it('shows the OSM credits under the totals in place mode', () => {
+    renderSection({ placeMode: true });
+    const credits = screen.getByText(/openstreetmap contributors/i);
+    expect(credits).toBeInTheDocument();
+    expect((credits as HTMLAnchorElement).href).toContain('openstreetmap.org');
+  });
 });
 
 describe('RoadPlannerSection — PlaceSearchBar', () => {

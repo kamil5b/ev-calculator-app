@@ -111,20 +111,6 @@ export function BatteryCalculator({ storage }: BatteryCalculatorProps) {
         </div>
         <p class="text-xs text-slate-500">Works fully offline</p>
       </footer>
-
-      {/* Route-planner credits (ACTUAL_PLACE_PLANNING §8); update on provider swap. */}
-      <p class="text-xs text-slate-500">
-        ©{' '}
-        <a
-          href="https://www.openstreetmap.org/copyright"
-          target="_blank"
-          rel="noreferrer"
-          class="underline hover:text-slate-700"
-        >
-          OpenStreetMap contributors
-        </a>{' '}
-        · Routing by OSRM
-      </p>
     </div>
   );
 }

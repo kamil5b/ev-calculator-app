@@ -91,6 +91,7 @@ export function Input({
             'min-h-11 w-full rounded-lg border bg-white px-3 py-2 text-base text-slate-900',
             'placeholder:text-slate-400',
             'focus-visible:ring-slate-900 focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:outline-none',
+            'disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400',
             unit !== undefined ? 'pr-14' : undefined,
             error ? 'border-red-500' : 'border-slate-300',
             className,

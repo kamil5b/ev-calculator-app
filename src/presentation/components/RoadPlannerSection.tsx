@@ -251,7 +251,7 @@ export function RoadPlannerSection({
                       type="checkbox"
                       checked={stop.charging}
                       disabled={placeMode}
-                      class="h-4 w-4 rounded border-slate-300"
+                      class="h-4 w-4 rounded border-slate-300 disabled:cursor-not-allowed disabled:opacity-50"
                       onChange={(event) => onChargeToggle(index, event.currentTarget.checked)}
                     />
                     Charge here
@@ -289,6 +289,22 @@ export function RoadPlannerSection({
         {result.labels.totals !== null && (
           <p class="text-sm font-medium tabular-nums text-slate-900" aria-live="polite">
             {result.labels.totals}
+          </p>
+        )}
+
+        {/* Attribution for the online providers; update on provider swap. */}
+        {placeMode && (
+          <p class="text-xs text-slate-500">
+            ©{' '}
+            <a
+              href="https://www.openstreetmap.org/copyright"
+              target="_blank"
+              rel="noreferrer"
+              class="underline hover:text-slate-700"
+            >
+              OpenStreetMap contributors
+            </a>{' '}
+            · Routing by OSRM
           </p>
         )}
 
@@ -386,8 +402,10 @@ function PlaceSearchBar({ pointIndex, place, onSearch, onPick, onClear }: PlaceS
   return (
     <div class="space-y-2">
       {place !== null && (
-        <div class="flex items-center justify-between gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2">
-          <p class="min-w-0 truncate text-sm font-medium text-emerald-900">{place.name}</p>
+        <div class="flex items-start justify-between gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2">
+          <p class="min-w-0 flex-1 whitespace-normal break-words text-sm font-medium text-emerald-900">
+            {place.name}
+          </p>
           <Button
             variant="ghost"
             size="sm"

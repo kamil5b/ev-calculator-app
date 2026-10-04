@@ -40,6 +40,9 @@ export const VALIDATION_MESSAGES = {
   tripNameRequired: 'Trip name is required',
   tripNameTooLong: `Trip name must be ${MAX_TRIP_NAME_LENGTH} characters or fewer`,
   tripIdInvalid: 'That trip no longer exists',
+  /** Trip file portability (TRIP_EXPORT_IMPORT §3). */
+  tripImportInvalid: 'That file is not a valid trip export',
+  tripImportVersion: 'Unsupported trip file version',
   /** "Plan with actual place" provider failures (ACTUAL_PLACE_PLANNING §7). */
   routeNoRoute: 'No route found between these places',
   routeRateLimit: 'Too many requests — wait a moment and try again',

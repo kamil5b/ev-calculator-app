@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/preact';
+import { render, screen, fireEvent, waitFor } from '@testing-library/preact';
 import { SavedTripsSection, type SavedTripsSectionProps } from '../SavedTripsSection';
 import { VALIDATION_MESSAGES } from '../../../domain/entities/validation';
 import { MAX_TRIP_NAME_LENGTH, type RoadTrip } from '../../../domain/entities/RoadTrip';
@@ -27,6 +27,8 @@ function renderSection(options: Partial<SavedTripsSectionProps> = {}) {
   const onLoad = options.onLoad ?? vi.fn<SavedTripsSectionProps['onLoad']>();
   const onUpdate = options.onUpdate ?? vi.fn<SavedTripsSectionProps['onUpdate']>(() => true);
   const onRemove = options.onRemove ?? vi.fn<SavedTripsSectionProps['onRemove']>(() => true);
+  const onExport = options.onExport ?? vi.fn<SavedTripsSectionProps['onExport']>();
+  const onImport = options.onImport ?? vi.fn<SavedTripsSectionProps['onImport']>(() => null);
 
   render(
     <SavedTripsSection
@@ -35,10 +37,19 @@ function renderSection(options: Partial<SavedTripsSectionProps> = {}) {
       onLoad={onLoad}
       onUpdate={onUpdate}
       onRemove={onRemove}
+      onExport={onExport}
+      onImport={onImport}
     />,
   );
-  return { onSave, onLoad, onUpdate, onRemove };
+  return { onSave, onLoad, onUpdate, onRemove, onExport, onImport };
 }
+
+/** Attaches a picked file the way the browser would, then fires `change`. */
+const pickFile = (input: HTMLInputElement, contents: string, filename = 'trip.json') => {
+  const file = new File([contents], filename, { type: 'application/json' });
+  Object.defineProperty(input, 'files', { configurable: true, value: [file] });
+  fireEvent.change(input);
+};
 
 describe('SavedTripsSection', () => {
   it('shows a hint when nothing is saved yet', () => {
@@ -120,5 +131,48 @@ describe('SavedTripsSection', () => {
     expect(screen.queryByText('Delete Weekend trip?')).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Delete Weekend trip' })).toBeInTheDocument();
     expect(onRemove).not.toHaveBeenCalled();
+  });
+
+  it('reports export with the trip id', () => {
+    const { onExport } = renderSection();
+    fireEvent.click(screen.getByRole('button', { name: 'Export Weekend trip' }));
+    expect(onExport).toHaveBeenCalledWith('trip-1');
+  });
+
+  it('imports a picked file and shows no error on success', async () => {
+    const { onImport } = renderSection();
+    const input = screen.getByLabelText('Import trip file') as HTMLInputElement;
+
+    pickFile(input, '{"format":"ev-calculator-trip"}');
+
+    await waitFor(() => expect(onImport).toHaveBeenCalledWith('{"format":"ev-calculator-trip"}'));
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
+  it('renders the message returned by a failed import', async () => {
+    renderSection({
+      onImport: vi.fn<SavedTripsSectionProps['onImport']>(() => VALIDATION_MESSAGES.tripImportInvalid),
+    });
+
+    pickFile(screen.getByLabelText('Import trip file') as HTMLInputElement, 'garbage');
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(VALIDATION_MESSAGES.tripImportInvalid);
+  });
+
+  it('clears a previous import error on the next attempt', async () => {
+    let attempt = 0;
+    const { onImport } = renderSection({
+      onImport: vi.fn<SavedTripsSectionProps['onImport']>(() =>
+        attempt++ === 0 ? VALIDATION_MESSAGES.tripImportVersion : null,
+      ),
+    });
+    const input = screen.getByLabelText('Import trip file') as HTMLInputElement;
+
+    pickFile(input, 'v2');
+    expect(await screen.findByRole('alert')).toHaveTextContent(VALIDATION_MESSAGES.tripImportVersion);
+
+    pickFile(input, 'v1');
+    await waitFor(() => expect(onImport).toHaveBeenCalledTimes(2));
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 });

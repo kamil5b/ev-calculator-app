@@ -90,6 +90,8 @@ export function BatteryCalculator({ storage }: BatteryCalculatorProps) {
           onLoadTrip={calculator.loadRoadTrip}
           onUpdateTrip={calculator.updateRoadTrip}
           onRemoveTrip={calculator.removeRoadTrip}
+          onExportTrip={calculator.exportRoadTrip}
+          onImportTrip={calculator.importRoadTrip}
           onReset={calculator.resetRoadPlan}
           onTogglePlaceMode={calculator.togglePlaceMode}
           onSearchPlaces={calculator.searchRoadPlaces}

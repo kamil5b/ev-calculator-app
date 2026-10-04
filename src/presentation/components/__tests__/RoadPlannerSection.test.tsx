@@ -30,6 +30,8 @@ function baseProps(): RoadPlannerSectionProps {
     onLoadTrip: vi.fn(),
     onUpdateTrip: vi.fn(() => true),
     onRemoveTrip: vi.fn(() => true),
+    onExportTrip: vi.fn(),
+    onImportTrip: vi.fn(() => null),
     onReset: vi.fn(),
     onTogglePlaceMode: vi.fn(),
     onSearchPlaces: vi.fn(async () => ({ places: [], error: null })),

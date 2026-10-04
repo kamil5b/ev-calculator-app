@@ -23,3 +23,10 @@ export interface RoadTripDraft {
 
 /** Bounds one trip name. */
 export const MAX_TRIP_NAME_LENGTH = 60;
+
+/**
+ * Envelope identity for exported trip files (TRIP_EXPORT_IMPORT §2).
+ * `format` names the file, `version` guards future shape changes.
+ */
+export const TRIP_EXPORT_FORMAT = 'ev-calculator-trip';
+export const TRIP_EXPORT_VERSION = 1;

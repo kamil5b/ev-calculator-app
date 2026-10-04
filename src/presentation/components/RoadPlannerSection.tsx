@@ -44,6 +44,10 @@ export type RoadPlannerSectionProps = {
   onLoadTrip: (id: string) => void;
   onUpdateTrip: (id: string) => boolean;
   onRemoveTrip: (id: string) => boolean;
+  /** Downloads a stored trip as a JSON file (TRIP_EXPORT_IMPORT §7). */
+  onExportTrip: (id: string) => void;
+  /** Imports a trip file's text; returns the error message, or null on success. */
+  onImportTrip: (json: string) => string | null;
   onReset: () => void;
   onTogglePlaceMode: () => void;
   onSearchPlaces: (query: string) => Promise<PlaceSearchOutcome>;
@@ -85,6 +89,8 @@ export function RoadPlannerSection({
   onLoadTrip,
   onUpdateTrip,
   onRemoveTrip,
+  onExportTrip,
+  onImportTrip,
   onReset,
   onTogglePlaceMode,
   onSearchPlaces,
@@ -118,6 +124,8 @@ export function RoadPlannerSection({
           onLoad={onLoadTrip}
           onUpdate={onUpdateTrip}
           onRemove={onRemoveTrip}
+          onExport={onExportTrip}
+          onImport={onImportTrip}
         />
 
         {online && (

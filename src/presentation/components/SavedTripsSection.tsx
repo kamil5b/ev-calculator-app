@@ -1,4 +1,5 @@
-import { useState } from 'preact/hooks';
+import { useRef, useState } from 'preact/hooks';
+import type { JSX } from 'preact';
 import type { RoadTrip } from '../../domain/entities/RoadTrip';
 import { MAX_TRIP_NAME_LENGTH } from '../../domain/entities/RoadTrip';
 import { VALIDATION_MESSAGES } from '../../domain/entities/validation';
@@ -16,6 +17,10 @@ export type SavedTripsSectionProps = {
   onUpdate: (id: string) => boolean;
   /** Deletes the stored trip; `false` = nothing was deleted. */
   onRemove: (id: string) => boolean;
+  /** Downloads the stored trip as a JSON file (TRIP_EXPORT_IMPORT §7). */
+  onExport: (id: string) => void;
+  /** Imports a trip file's text; returns the error message, or null on success. */
+  onImport: (json: string) => string | null;
 };
 
 /**
@@ -27,10 +32,20 @@ export type SavedTripsSectionProps = {
  * data and mutations live in the hook. Deletion uses the same inline
  * confirmation pattern as the car garage.
  */
-export function SavedTripsSection({ trips, onSave, onLoad, onUpdate, onRemove }: SavedTripsSectionProps) {
+export function SavedTripsSection({
+  trips,
+  onSave,
+  onLoad,
+  onUpdate,
+  onRemove,
+  onExport,
+  onImport,
+}: SavedTripsSectionProps) {
   const [name, setName] = useState('');
   const [error, setError] = useState<string | undefined>(undefined);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const [importError, setImportError] = useState<string | undefined>(undefined);
+  const fileInput = useRef<HTMLInputElement>(null);
 
   const handleSave = () => {
     const trimmed = name.trim();
@@ -48,6 +63,26 @@ export function SavedTripsSection({ trips, onSave, onLoad, onUpdate, onRemove }:
     }
     setName('');
     setError(undefined);
+    setImportError(undefined);
+  };
+
+  /** Reads the picked file and hands its text to the hook (§7). */
+  const handleFile = async (event: JSX.TargetedEvent<HTMLInputElement>) => {
+    const input = event.currentTarget;
+    const file = input.files?.[0];
+    if (file === undefined) return;
+
+    setImportError(undefined);
+    try {
+      const text = await readFileText(file);
+      const message = onImport(text);
+      if (message !== null) setImportError(message);
+    } catch {
+      setImportError(VALIDATION_MESSAGES.tripImportInvalid);
+    } finally {
+      // Allow the same file to be picked again after a failed import.
+      input.value = '';
+    }
   };
 
   const confirmDelete = (trip: RoadTrip) => {
@@ -71,7 +106,24 @@ export function SavedTripsSection({ trips, onSave, onLoad, onUpdate, onRemove }:
           }}
         />
         <Button onClick={handleSave}>Save</Button>
+        <Button variant="outline" onClick={() => fileInput.current?.click()}>
+          Import
+        </Button>
+        <input
+          ref={fileInput}
+          type="file"
+          accept="application/json,.json"
+          class="hidden"
+          aria-label="Import trip file"
+          onChange={(event) => void handleFile(event)}
+        />
       </div>
+
+      {importError !== undefined && (
+        <p class="text-sm text-red-600" role="alert">
+          {importError}
+        </p>
+      )}
 
       {trips.length === 0 ? (
         <p class="text-sm text-slate-500">No saved trips yet</p>
@@ -121,6 +173,14 @@ export function SavedTripsSection({ trips, onSave, onLoad, onUpdate, onRemove }:
                     <Button
                       variant="ghost"
                       size="sm"
+                      aria-label={`Export ${trip.name}`}
+                      onClick={() => onExport(trip.id)}
+                    >
+                      Export
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       aria-label={`Delete ${trip.name}`}
                       onClick={() => setPendingDeleteId(trip.id)}
                     >
@@ -135,4 +195,17 @@ export function SavedTripsSection({ trips, onSave, onLoad, onUpdate, onRemove }:
       )}
     </>
   );
+}
+
+/**
+ * Reads a picked file as text. `FileReader` rather than `File.text()`:
+ * identical browser support, but also available in the jsdom test runner.
+ */
+function readFileText(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result ?? ''));
+    reader.onerror = () => reject(reader.error ?? new Error('read failed'));
+    reader.readAsText(file);
+  });
 }

@@ -98,4 +98,108 @@ describe('RoadTripService', () => {
       expect(service.remove('trip-missing')).toBe(false);
     });
   });
+
+  describe('serialize', () => {
+    it('emits the versioned envelope with draft fields only', () => {
+      const saved = service.add({ name: 'Weekend', plan, distanceUnit: 'mi' });
+      if (!saved.ok) throw new Error('expected save to succeed');
+
+      const parsed = JSON.parse(RoadTripService.serialize(saved.trip));
+
+      expect(parsed).toEqual({
+        format: 'ev-calculator-trip',
+        version: 1,
+        trip: { name: 'Weekend', plan, distanceUnit: 'mi' },
+      });
+      expect(parsed).not.toHaveProperty('trip.id');
+      expect(parsed).not.toHaveProperty('trip.createdAt');
+    });
+  });
+
+  describe('importTrip', () => {
+    const envelope = (overrides: Record<string, unknown> = {}) =>
+      JSON.stringify({
+        format: 'ev-calculator-trip',
+        version: 1,
+        trip: { name: 'Imported', plan, distanceUnit: 'km' },
+        ...overrides,
+      });
+
+    it('round-trips a serialised trip as a new record', () => {
+      const saved = service.add({ name: 'Weekend', plan, distanceUnit: 'mi' });
+      if (!saved.ok) throw new Error('expected save to succeed');
+
+      const outcome = service.importTrip(RoadTripService.serialize(saved.trip));
+
+      expect(outcome.ok).toBe(true);
+      const imported = service.list()[0];
+      expect(imported?.name).toBe('Weekend');
+      expect(imported?.plan).toEqual(plan);
+      expect(imported?.distanceUnit).toBe('mi');
+      expect(imported?.id).not.toBe(saved.trip.id);
+      expect(service.list()).toHaveLength(2);
+    });
+
+    it('rejects a malformed file without writing', () => {
+      const cases: [string, string][] = [
+        ['garbage', VALIDATION_MESSAGES.tripImportInvalid],
+        ['"a string"', VALIDATION_MESSAGES.tripImportInvalid],
+        [
+          JSON.stringify({ format: 'other-app', version: 1, trip: {} }),
+          VALIDATION_MESSAGES.tripImportInvalid,
+        ],
+        [JSON.stringify({ format: 'ev-calculator-trip', version: 1 }), VALIDATION_MESSAGES.tripImportInvalid],
+        [
+          JSON.stringify({ format: 'ev-calculator-trip', version: 'x', trip: {} }),
+          VALIDATION_MESSAGES.tripImportInvalid,
+        ],
+        [
+          JSON.stringify({ format: 'ev-calculator-trip', version: 1, trip: { name: 42 } }),
+          VALIDATION_MESSAGES.tripImportInvalid,
+        ],
+        [
+          JSON.stringify({ format: 'ev-calculator-trip', version: 2, trip: { name: 'x' } }),
+          VALIDATION_MESSAGES.tripImportVersion,
+        ],
+      ];
+
+      for (const [json, message] of cases) {
+        expect(service.importTrip(json)).toEqual({
+          ok: false,
+          errors: [{ field: 'tripImport', message }],
+        });
+      }
+      expect(service.list()).toEqual([]);
+    });
+
+    it('surfaces the existing name validation messages', () => {
+      const empty = service.importTrip(envelope({ trip: { name: '  ', plan, distanceUnit: 'km' } }));
+      expect(empty).toEqual({
+        ok: false,
+        errors: [{ field: 'tripName', message: VALIDATION_MESSAGES.tripNameRequired }],
+      });
+
+      const long = service.importTrip(envelope({ trip: { name: 'x'.repeat(61), plan, distanceUnit: 'km' } }));
+      expect(long).toEqual({
+        ok: false,
+        errors: [{ field: 'tripName', message: VALIDATION_MESSAGES.tripNameTooLong }],
+      });
+      expect(service.list()).toEqual([]);
+    });
+
+    it('degrades corrupt fields the way storage reads do', () => {
+      const outcome = service.importTrip(
+        JSON.stringify({
+          format: 'ev-calculator-trip',
+          version: 1,
+          trip: { name: 'Degraded', plan: 'not a plan', distanceUnit: 'furlongs' },
+        }),
+      );
+
+      expect(outcome.ok).toBe(true);
+      const imported = service.list()[0];
+      expect(imported?.plan).toEqual(DEFAULT_ROAD_PLAN);
+      expect(imported?.distanceUnit).toBe('km');
+    });
+  });
 });

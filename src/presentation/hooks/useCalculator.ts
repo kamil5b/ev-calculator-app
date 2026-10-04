@@ -11,7 +11,7 @@ import type { CarModel } from '../../domain/entities/CarModel';
 import type { CalculationResult } from '../../application/dto/CalculationResult';
 import { batteryCalculationService } from '../../application/services/BatteryCalculationService';
 import { validateBatteryInputs } from '../../domain/use-cases/ValidateBatteryInputs';
-import type { FieldError } from '../../domain/entities/validation';
+import { VALIDATION_MESSAGES, type FieldError } from '../../domain/entities/validation';
 import { clampPercent } from '../../domain/use-cases/math';
 import { switchDistanceUnit } from '../../domain/use-cases/SwitchDistanceUnit';
 import type { DistanceUnit } from '../../domain/entities/DistanceUnit';
@@ -19,6 +19,7 @@ import { MAX_POINT_NAME_LENGTH, MAX_ROAD_STOPS, type RoadPlan } from '../../doma
 import type { RoadTrip } from '../../domain/entities/RoadTrip';
 import { convertDistance } from '../../domain/entities/DistanceUnit';
 import { roadPlannerService } from '../../application/services/RoadPlannerService';
+import { RoadTripService } from '../../application/services/RoadTripService';
 import { RoutePlannerService } from '../../application/services/RoutePlannerService';
 import type { RoadPlanResult } from '../../application/dto/RoadPlanResult';
 import type { Place } from '../../domain/entities/Place';
@@ -63,6 +64,10 @@ export interface UseCalculator {
   loadRoadTrip: (id: string) => void;
   updateRoadTrip: (id: string) => boolean;
   removeRoadTrip: (id: string) => boolean;
+  /** Downloads a stored trip as `<slug>.json` (TRIP_EXPORT_IMPORT §6). */
+  exportRoadTrip: (id: string) => void;
+  /** Imports a trip file's text; returns the error message, or null on success. */
+  importRoadTrip: (json: string) => string | null;
   resetRoadPlan: () => void;
   /** "Plan with actual place" mode is on (ACTUAL_PLACE_PLANNING §5). */
   readonly placeMode: boolean;
@@ -387,6 +392,37 @@ export function useCalculator(storage?: StoragePort): UseCalculator {
     [tripsService],
   );
 
+  /** Downloads a stored trip as a portable `.json` file (TRIP_EXPORT_IMPORT §6). */
+  const exportRoadTrip = useCallback(
+    (id: string): void => {
+      const trip = tripsService.getById(id);
+      if (trip === null) return;
+
+      const blob = new Blob([RoadTripService.serialize(trip)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = `${tripFilename(trip.name)}.json`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(url);
+    },
+    [tripsService],
+  );
+
+  /** Imports a trip file's text; returns the error message, or null on success. */
+  const importRoadTrip = useCallback(
+    (json: string): string | null => {
+      const outcome = tripsService.importTrip(json);
+      if (!outcome.ok) return outcome.errors[0]?.message ?? VALIDATION_MESSAGES.tripImportInvalid;
+
+      setSavedTrips(tripsService.list());
+      return null;
+    },
+    [tripsService],
+  );
+
   /** Restores the planner to the first-run plan; saved trips are untouched. */
   const resetRoadPlan = useCallback(() => {
     // The draft places belong to the plan being discarded.
@@ -581,6 +617,8 @@ export function useCalculator(storage?: StoragePort): UseCalculator {
     loadRoadTrip,
     updateRoadTrip,
     removeRoadTrip,
+    exportRoadTrip,
+    importRoadTrip,
     resetRoadPlan,
     placeMode,
     places,
@@ -599,4 +637,13 @@ export function useCalculator(storage?: StoragePort): UseCalculator {
     reset,
     errorFor,
   };
+}
+
+/** File-safe slug for the export download: `Weekend trip` → `weekend-trip`. */
+function tripFilename(name: string): string {
+  const slug = name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  return slug === '' ? 'trip' : slug;
 }
